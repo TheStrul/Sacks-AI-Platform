@@ -6,6 +6,7 @@ using Serilog;
 using SacksAIPlatform.DataLayer.Context;
 using SacksAIPlatform.DataLayer.Repositories.Interfaces;
 using SacksAIPlatform.DataLayer.Repositories.Implementations;
+using SacksAIPlatform.DataLayer.Seeds;
 
 namespace SacksAIPlatform.GuiLayer;
 
@@ -63,6 +64,7 @@ class Program
     {
         using var scope = host.Services.CreateScope();
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<PerfumeDbContext>();
 
         Log.Information("=== Sacks AI Platform - Perfume Database Management ===");
         Log.Information("Architecture: 5-Layer Clean Architecture");
@@ -75,19 +77,46 @@ class Program
         Log.Information("Database: Entity Framework Core with SQL Server");
         Log.Information("Entities: Manufacturer, Brand, Supplier, Perfume");
         
-        // Test database connection
+        // Initialize database
         try
         {
+            Log.Information("Initializing database...");
+            await dbContext.Database.MigrateAsync();
+            Log.Information("Database migrations applied successfully.");
+            
+            // Seed initial data
+            Log.Information("Seeding initial data...");
+            await DatabaseSeeder.SeedAsync(dbContext);
+            Log.Information("Database seeding completed.");
+            
+            // Test database connection and display data
             var manufacturers = await unitOfWork.Manufacturers.GetAllAsync();
-            Log.Information($"Database connection successful. Found {manufacturers.Count()} manufacturers.");
+            var brands = await unitOfWork.Brands.GetAllAsync();
+            var suppliers = await unitOfWork.Suppliers.GetAllAsync();
+            var perfumes = await unitOfWork.Perfumes.GetAllAsync();
+            
+            Log.Information($"✅ Database initialized successfully!");
+            Log.Information($"📊 Data Summary:");
+            Log.Information($"   - Manufacturers: {manufacturers.Count()}");
+            Log.Information($"   - Brands: {brands.Count()}");
+            Log.Information($"   - Suppliers: {suppliers.Count()}");
+            Log.Information($"   - Perfumes: {perfumes.Count()}");
+            
+            // Display sample data
+            Log.Information($"📋 Sample Perfumes:");
+            foreach (var perfume in perfumes.Take(3))
+            {
+                Log.Information($"   - {perfume.PerfumeCode}: {perfume.Name} by {perfume.Brand?.Name} ({perfume.Concentration})");
+            }
         }
         catch (Exception ex)
         {
-            Log.Warning($"Database connection issue: {ex.Message}");
-            Log.Information("This is normal on first run - database needs to be created.");
+            Log.Error($"Database initialization failed: {ex.Message}");
+            Log.Warning("Please ensure SQL Server LocalDB is installed and running.");
         }
 
-        Log.Information("First stage implementation complete!");
+        Log.Information("Second stage implementation complete!");
+        Log.Information("✅ Initial DataStore created and populated");
         Log.Information("Ready for next development phase...");
     }
 }

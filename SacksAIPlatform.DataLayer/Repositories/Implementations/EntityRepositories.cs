@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SacksAIPlatform.DataLayer.Context;
 using SacksAIPlatform.DataLayer.Entities;
+using SacksAIPlatform.DataLayer.Enums;
 using SacksAIPlatform.DataLayer.Repositories.Interfaces;
 
 namespace SacksAIPlatform.DataLayer.Repositories.Implementations;
@@ -116,14 +117,14 @@ public class PerfumeRepository : Repository<Perfume>, IPerfumeRepository
                           .ToListAsync();
     }
 
-    public async Task<IEnumerable<Perfume>> GetByConcentrationAsync(string concentration)
+    public async Task<IEnumerable<Perfume>> GetByConcentrationAsync(Concentration concentration)
     {
         return await _dbSet.Include(p => p.Brand)
                           .Where(p => p.Concentration == concentration)
                           .ToListAsync();
     }
 
-    public async Task<IEnumerable<Perfume>> GetByGenderAsync(string gender)
+    public async Task<IEnumerable<Perfume>> GetByGenderAsync(Gender gender)
     {
         return await _dbSet.Include(p => p.Brand)
                           .Where(p => p.Gender == gender)

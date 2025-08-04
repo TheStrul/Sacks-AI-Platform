@@ -32,10 +32,10 @@ public class Repository<T> : IRepository<T> where T : class
         return result.Entity;
     }
 
-    public virtual async Task<T> UpdateAsync(T entity)
+    public virtual Task<T> UpdateAsync(T entity)
     {
         _context.Entry(entity).State = EntityState.Modified;
-        return entity;
+        return Task.FromResult(entity);
     }
 
     public virtual async Task<bool> DeleteAsync(object id)
