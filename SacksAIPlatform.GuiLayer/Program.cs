@@ -61,7 +61,7 @@ class Program
         {
             var configuration = builder.Services.BuildServiceProvider().GetRequiredService<IConfiguration>();
             var connectionString = configuration.GetConnectionString("DefaultConnection");
-            options.UseSqlServer(connectionString);
+            options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
         });
 
         // Register repositories
@@ -72,16 +72,16 @@ class Program
         builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         // Register services
-        builder.Services.AddScoped<PerfumeBusinessService>();
+        builder.Services.AddScoped<ProductsBusinessService>();
         builder.Services.AddScoped<ProductMLPipeline>();
-        builder.Services.AddScoped<PerfumeImportService>();
+        builder.Services.AddScoped<ProductsImportService>();
         builder.Services.AddScoped<IFileDataReader, FileDataReader>();
         builder.Services.AddScoped<IFiletoProductConverter, FiletoProductConverter>();
 
         // Register AI services - Infrastructure layer AI with business service wrapper
         builder.Services.AddScoped<IIntentRecognitionService, OpenAIIntentRecognitionService>();
         builder.Services.AddScoped<IConversationalAgent, GenericLLMAgent>();
-        builder.Services.AddScoped<PerfumeInventoryAIService>();
+        builder.Services.AddScoped<ProductsInventoryAIService>();
         builder.Services.AddScoped<ChatInterface>();
 
         var app = builder.Build();

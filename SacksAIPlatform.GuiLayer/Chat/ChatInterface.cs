@@ -10,12 +10,12 @@ namespace SacksAIPlatform.GuiLayer.Chat;
 /// </summary>
 public class ChatInterface
 {
-    private readonly PerfumeInventoryAIService _aiService;
+    private readonly ProductsInventoryAIService _aiService;
     private readonly ILogger<ChatInterface> _logger;
     private readonly string _userId;
     private bool _isRunning;
 
-    public ChatInterface(PerfumeInventoryAIService aiService, ILogger<ChatInterface> logger, string userId = "user")
+    public ChatInterface(ProductsInventoryAIService aiService, ILogger<ChatInterface> logger, string userId = "user")
     {
         _aiService = aiService;
         _logger = logger;
