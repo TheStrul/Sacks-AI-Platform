@@ -57,7 +57,7 @@ class Program
         });
 
         // Add DbContext
-        builder.Services.AddDbContext<PerfumeDbContext>(options =>
+        builder.Services.AddDbContext<SacksDbContext>(options =>
         {
             var configuration = builder.Services.BuildServiceProvider().GetRequiredService<IConfiguration>();
             var connectionString = configuration.GetConnectionString("DefaultConnection");
@@ -68,7 +68,7 @@ class Program
         builder.Services.AddScoped<IBrandRepository, BrandRepository>();
         builder.Services.AddScoped<IManufacturerRepository, ManufacturerRepository>();
         builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
-        builder.Services.AddScoped<IPerfumeRepository, PerfumeRepository>();
+        builder.Services.AddScoped<IProductRepository, PerfumeRepository>();
         builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         // Register services
@@ -76,7 +76,7 @@ class Program
         builder.Services.AddScoped<ProductMLPipeline>();
         builder.Services.AddScoped<PerfumeImportService>();
         builder.Services.AddScoped<IFileDataReader, FileDataReader>();
-        builder.Services.AddScoped<ICsvPerfumeConverter, CsvPerfumeConverter>();
+        builder.Services.AddScoped<ICsvProductConverter, FiletoProductConverter>();
 
         // Register AI services - Infrastructure layer AI with business service wrapper
         builder.Services.AddScoped<IIntentRecognitionService, OpenAIIntentRecognitionService>();
@@ -91,7 +91,7 @@ class Program
         {
             try
             {
-                var context = scope.ServiceProvider.GetRequiredService<PerfumeDbContext>();
+                var context = scope.ServiceProvider.GetRequiredService<SacksDbContext>();
                 context.Database.EnsureCreated();
                 Log.Information("Database initialized successfully");
             }

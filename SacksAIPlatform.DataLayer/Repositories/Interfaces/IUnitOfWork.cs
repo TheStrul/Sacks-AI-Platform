@@ -5,7 +5,7 @@ public interface IUnitOfWork : IDisposable
     IManufacturerRepository Manufacturers { get; }
     IBrandRepository Brands { get; }
     ISupplierRepository Suppliers { get; }
-    IPerfumeRepository Perfumes { get; }
+    IProductRepository Perfumes { get; }
     
     Task<int> SaveChangesAsync();
     Task BeginTransactionAsync();

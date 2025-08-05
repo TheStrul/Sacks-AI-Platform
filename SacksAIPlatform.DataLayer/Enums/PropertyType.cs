@@ -6,7 +6,7 @@ namespace SacksAIPlatform.DataLayer.Enums;
 /// </summary>
 public enum PropertyType
 {
-    PerfumeCode,
+    Code,
     Name,
     BrandID,
     Concentration,
@@ -21,7 +21,7 @@ public enum PropertyType
     
     // Additional fields that might appear in CSV but not directly map to Perfume
     Brand,           // Brand name (will be resolved to BrandID)
-    UPC,            // Universal Product Code (alternative to PerfumeCode)
+    UPC,            // Universal Product Code (alternative to Code)
     ProductName,    // Alternative to Name
     SizeAndUnits,   // Combined size and units field
     LiFree,         // Alternative spelling

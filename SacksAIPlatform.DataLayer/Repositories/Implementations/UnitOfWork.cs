@@ -6,15 +6,15 @@ namespace SacksAIPlatform.DataLayer.Repositories.Implementations;
 
 public class UnitOfWork : IUnitOfWork
 {
-    private readonly PerfumeDbContext _context;
+    private readonly SacksDbContext _context;
     private IDbContextTransaction? _transaction;
     
     private IManufacturerRepository? _manufacturerRepository;
     private IBrandRepository? _brandRepository;
     private ISupplierRepository? _supplierRepository;
-    private IPerfumeRepository? _perfumeRepository;
+    private IProductRepository? _perfumeRepository;
 
-    public UnitOfWork(PerfumeDbContext context)
+    public UnitOfWork(SacksDbContext context)
     {
         _context = context;
     }
@@ -28,7 +28,7 @@ public class UnitOfWork : IUnitOfWork
     public ISupplierRepository Suppliers =>
         _supplierRepository ??= new SupplierRepository(_context);
 
-    public IPerfumeRepository Perfumes =>
+    public IProductRepository Perfumes =>
         _perfumeRepository ??= new PerfumeRepository(_context);
 
     public async Task<int> SaveChangesAsync()

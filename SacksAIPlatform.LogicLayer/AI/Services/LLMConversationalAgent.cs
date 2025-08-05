@@ -19,7 +19,7 @@ public class LLMConversationalAgent : IConversationalAgent
     private readonly IIntentRecognitionService _intentService;
     
     // Database access
-    private readonly IPerfumeRepository _perfumeRepository;
+    private readonly IProductRepository _perfumeRepository;
     private readonly IBrandRepository _brandRepository;
     private readonly IManufacturerRepository _manufacturerRepository;
     private readonly ISupplierRepository _supplierRepository;
@@ -35,7 +35,7 @@ public class LLMConversationalAgent : IConversationalAgent
         ILogger<LLMConversationalAgent> logger,
         IConfiguration configuration,
         IIntentRecognitionService intentService,
-        IPerfumeRepository perfumeRepository,
+        IProductRepository perfumeRepository,
         IBrandRepository brandRepository,
         IManufacturerRepository manufacturerRepository,
         ISupplierRepository supplierRepository,

@@ -8,7 +8,7 @@ namespace SacksAIPlatform.DataLayer.Repositories.Implementations;
 
 public class ManufacturerRepository : Repository<Manufacturer>, IManufacturerRepository
 {
-    public ManufacturerRepository(PerfumeDbContext context) : base(context)
+    public ManufacturerRepository(SacksDbContext context) : base(context)
     {
     }
 
@@ -31,7 +31,7 @@ public class ManufacturerRepository : Repository<Manufacturer>, IManufacturerRep
 
 public class BrandRepository : Repository<Brand>, IBrandRepository
 {
-    public BrandRepository(PerfumeDbContext context) : base(context)
+    public BrandRepository(SacksDbContext context) : base(context)
     {
     }
 
@@ -57,21 +57,21 @@ public class BrandRepository : Repository<Brand>, IBrandRepository
     public override async Task<IEnumerable<Brand>> GetAllAsync()
     {
         return await _dbSet.Include(b => b.Manufacturer)
-                          .Include(b => b.Perfumes)
+                          .Include(b => b.Products)
                           .ToListAsync();
     }
 
     public override async Task<Brand?> GetByIdAsync(object id)
     {
         return await _dbSet.Include(b => b.Manufacturer)
-                          .Include(b => b.Perfumes)
+                          .Include(b => b.Products)
                           .FirstOrDefaultAsync(b => b.BrandID == (int)id);
     }
 }
 
 public class SupplierRepository : Repository<Supplier>, ISupplierRepository
 {
-    public SupplierRepository(PerfumeDbContext context) : base(context)
+    public SupplierRepository(SacksDbContext context) : base(context)
     {
     }
 
@@ -91,58 +91,58 @@ public class SupplierRepository : Repository<Supplier>, ISupplierRepository
     }
 }
 
-public class PerfumeRepository : Repository<Perfume>, IPerfumeRepository
+public class PerfumeRepository : Repository<Product>, IProductRepository
 {
-    public PerfumeRepository(PerfumeDbContext context) : base(context)
+    public PerfumeRepository(SacksDbContext context) : base(context)
     {
     }
 
-    public async Task<Perfume?> GetByCodeAsync(string perfumeCode)
+    public async Task<Product?> GetByCodeAsync(string perfumeCode)
     {
         return await _dbSet.Include(p => p.Brand)
                           .ThenInclude(b => b.Manufacturer)
-                          .FirstOrDefaultAsync(p => p.PerfumeCode == perfumeCode);
+                          .FirstOrDefaultAsync(p => p.Code == perfumeCode);
     }
 
-    public async Task<IEnumerable<Perfume>> GetByBrandIdAsync(int brandId)
+    public async Task<IEnumerable<Product>> GetByBrandIdAsync(int brandId)
     {
         return await _dbSet.Include(p => p.Brand)
                           .Where(p => p.BrandID == brandId)
                           .ToListAsync();
     }
 
-    public async Task<IEnumerable<Perfume>> GetByNameAsync(string name)
+    public async Task<IEnumerable<Product>> GetByNameAsync(string name)
     {
         return await _dbSet.Include(p => p.Brand)
                           .Where(p => p.Name.Contains(name))
                           .ToListAsync();
     }
 
-    public async Task<IEnumerable<Perfume>> GetByConcentrationAsync(Concentration concentration)
+    public async Task<IEnumerable<Product>> GetByConcentrationAsync(Concentration concentration)
     {
         return await _dbSet.Include(p => p.Brand)
                           .Where(p => p.Concentration == concentration)
                           .ToListAsync();
     }
 
-    public async Task<IEnumerable<Perfume>> GetByGenderAsync(Gender gender)
+    public async Task<IEnumerable<Product>> GetByGenderAsync(Gender gender)
     {
         return await _dbSet.Include(p => p.Brand)
                           .Where(p => p.Gender == gender)
                           .ToListAsync();
     }
 
-    public override async Task<IEnumerable<Perfume>> GetAllAsync()
+    public override async Task<IEnumerable<Product>> GetAllAsync()
     {
         return await _dbSet.Include(p => p.Brand)
                           .ThenInclude(b => b.Manufacturer)
                           .ToListAsync();
     }
 
-    public override async Task<Perfume?> GetByIdAsync(object id)
+    public override async Task<Product?> GetByIdAsync(object id)
     {
         return await _dbSet.Include(p => p.Brand)
                           .ThenInclude(b => b.Manufacturer)
-                          .FirstOrDefaultAsync(p => p.PerfumeCode == (string)id);
+                          .FirstOrDefaultAsync(p => p.Code == (string)id);
     }
 }

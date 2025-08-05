@@ -9,7 +9,7 @@ namespace SacksAIPlatform.DataLayer.Seeds;
 
 public static class DatabaseSeeder
 {
-    public static async Task SeedAsync(PerfumeDbContext context)
+    public static async Task SeedAsync(SacksDbContext context)
     {
         // Ensure database is created
         await context.Database.EnsureCreatedAsync();

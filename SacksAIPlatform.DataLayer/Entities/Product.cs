@@ -3,10 +3,10 @@ using System.Text.Json.Serialization;
 
 namespace SacksAIPlatform.DataLayer.Entities;
 
-public class Perfume
+public class Product
 {
-    [JsonPropertyName("perfumeCode")]
-    public string PerfumeCode { get; set; } = string.Empty; // World Wide Unique Primary Key
+    [JsonPropertyName("code")]
+    public string Code { get; set; } = string.Empty; // World Wide Unique Primary Key
     
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;

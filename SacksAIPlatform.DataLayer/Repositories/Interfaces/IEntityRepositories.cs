@@ -22,11 +22,11 @@ public interface ISupplierRepository : IRepository<Supplier>
     Task<IEnumerable<Supplier>> GetByCountryAsync(string country);
 }
 
-public interface IPerfumeRepository : IRepository<Perfume>
+public interface IProductRepository : IRepository<Product>
 {
-    Task<Perfume?> GetByCodeAsync(string perfumeCode);
-    Task<IEnumerable<Perfume>> GetByBrandIdAsync(int brandId);
-    Task<IEnumerable<Perfume>> GetByNameAsync(string name);
-    Task<IEnumerable<Perfume>> GetByConcentrationAsync(Concentration concentration);
-    Task<IEnumerable<Perfume>> GetByGenderAsync(Gender gender);
+    Task<Product?> GetByCodeAsync(string perfumeCode);
+    Task<IEnumerable<Product>> GetByBrandIdAsync(int brandId);
+    Task<IEnumerable<Product>> GetByNameAsync(string name);
+    Task<IEnumerable<Product>> GetByConcentrationAsync(Concentration concentration);
+    Task<IEnumerable<Product>> GetByGenderAsync(Gender gender);
 }

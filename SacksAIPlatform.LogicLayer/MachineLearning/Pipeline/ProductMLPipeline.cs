@@ -173,7 +173,7 @@ public class ProductMLPipeline
         
         // Step 5: Determine if this creates a valid product
         bool isValidProduct = IsValidForDatabase(features, labels, qualityScore);
-        Perfume? product = null;
+        Product? product = null;
         
         if (isValidProduct)
         {
@@ -234,9 +234,9 @@ public class ProductMLPipeline
     /// <summary>
     /// Create a Perfume entity from ML predictions
     /// </summary>
-    private Perfume CreateProductFromPrediction(ProductFeatures features, ProductLabels labels, string[] csvFields)
+    private Product CreateProductFromPrediction(ProductFeatures features, ProductLabels labels, string[] csvFields)
     {
-        return new Perfume
+        return new Product
         {
             Name = features.RawProductName,
             BrandID = labels.BrandId!.Value,
@@ -254,7 +254,7 @@ public class ProductMLPipeline
     /// <summary>
     /// Collect user feedback in interactive mode
     /// </summary>
-    private async Task<UserFeedback?> CollectUserFeedbackAsync(string csvLine, ProductFeatures features, ProductLabels labels, Perfume? product, int recordNumber)
+    private async Task<UserFeedback?> CollectUserFeedbackAsync(string csvLine, ProductFeatures features, ProductLabels labels, Product? product, int recordNumber)
     {
         Console.WriteLine($"\n🔍 Record {recordNumber} - ML Prediction Review");
         Console.WriteLine("📋 ORIGINAL CSV DATA:");
@@ -363,7 +363,7 @@ public class ProductMLPipeline
 /// </summary>
 public class MLPipelineResult
 {
-    public List<Perfume> ValidProducts { get; set; } = new();
+    public List<Product> ValidProducts { get; set; } = new();
     public List<ProductTrainingData> TrainingDataPoints { get; set; } = new();
     public MLPipelineStatistics Statistics { get; set; } = new();
     public Dictionary<string, object> KnowledgeBaseInsights { get; set; } = new();
@@ -380,7 +380,7 @@ public class MLPipelineItem
     public ProductFeatures Features { get; set; } = new();
     public ProductLabels Labels { get; set; } = new();
     public ProductTrainingData? TrainingData { get; set; }
-    public Perfume? Product { get; set; }
+    public Product? Product { get; set; }
     public bool IsValidProduct { get; set; }
     public double QualityScore { get; set; }
     public UserFeedback? UserFeedback { get; set; }

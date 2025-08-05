@@ -37,7 +37,7 @@ public interface IAIPerfumeAgent
     /// <summary>
     /// Validates and scores product data quality
     /// </summary>
-    Task<ValidationResult> ValidateProductDataAsync(Perfume perfume, ProductTrainingData trainingData);
+    Task<ValidationResult> ValidateProductDataAsync(Product perfume, ProductTrainingData trainingData);
 }
 
 /// <summary>
@@ -71,7 +71,7 @@ public interface IKnowledgeBaseManager
 /// </summary>
 public class MLProcessingResult
 {
-    public List<Perfume> ValidatedProducts { get; set; } = new();
+    public List<Product> ValidatedProducts { get; set; } = new();
     public List<ProductTrainingData> TrainingDataset { get; set; } = new();
     public List<KnowledgeBaseEntry> NewKnowledgeEntries { get; set; } = new();
     public MLMetrics Metrics { get; set; } = new();

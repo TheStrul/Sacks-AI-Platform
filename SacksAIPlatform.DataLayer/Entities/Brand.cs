@@ -23,5 +23,5 @@ public class Brand
     public virtual Manufacturer Manufacturer { get; set; } = null!;
     
     [JsonIgnore]
-    public virtual ICollection<Perfume> Perfumes { get; set; } = new List<Perfume>();
+    public virtual ICollection<Product> Products { get; set; } = new List<Product>();
 }

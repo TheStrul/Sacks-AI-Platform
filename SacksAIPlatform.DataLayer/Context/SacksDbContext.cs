@@ -3,16 +3,16 @@ using SacksAIPlatform.DataLayer.Entities;
 
 namespace SacksAIPlatform.DataLayer.Context;
 
-public class PerfumeDbContext : DbContext
+public class SacksDbContext : DbContext
 {
-    public PerfumeDbContext(DbContextOptions<PerfumeDbContext> options) : base(options)
+    public SacksDbContext(DbContextOptions<SacksDbContext> options) : base(options)
     {
     }
 
     public DbSet<Manufacturer> Manufacturers { get; set; }
     public DbSet<Brand> Brands { get; set; }
     public DbSet<Supplier> Suppliers { get; set; }
-    public DbSet<Perfume> Perfumes { get; set; }
+    public DbSet<Product> Producs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -51,11 +51,11 @@ public class PerfumeDbContext : DbContext
             entity.Property(e => e.ContactInfo).HasMaxLength(500);
         });
 
-        // Configure Perfume
-        modelBuilder.Entity<Perfume>(entity =>
+        // Configure Product
+        modelBuilder.Entity<Product>(entity =>
         {
-            entity.HasKey(e => e.PerfumeCode);
-            entity.Property(e => e.PerfumeCode).IsRequired().HasMaxLength(100);
+            entity.HasKey(e => e.Code);
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
             entity.Property(e => e.Concentration).HasMaxLength(50);
             entity.Property(e => e.Type).HasMaxLength(50);
@@ -68,7 +68,7 @@ public class PerfumeDbContext : DbContext
             entity.Property(e => e.OriginalSource).HasMaxLength(500);
             
             entity.HasOne(e => e.Brand)
-                  .WithMany(b => b.Perfumes)
+                  .WithMany(b => b.Products)
                   .HasForeignKey(e => e.BrandID)
                   .OnDelete(DeleteBehavior.Cascade);
         });

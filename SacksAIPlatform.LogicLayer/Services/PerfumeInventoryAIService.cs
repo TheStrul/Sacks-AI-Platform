@@ -16,7 +16,7 @@ public class PerfumeInventoryAIService
     private readonly IConversationalAgent _aiAgent;
     
     // Business-specific dependencies
-    private readonly IPerfumeRepository _perfumeRepository;
+    private readonly IProductRepository _perfumeRepository;
     private readonly IBrandRepository _brandRepository;
     private readonly IManufacturerRepository _manufacturerRepository;
     private readonly ISupplierRepository _supplierRepository;
@@ -26,7 +26,7 @@ public class PerfumeInventoryAIService
     public PerfumeInventoryAIService(
         ILogger<PerfumeInventoryAIService> logger,
         IConversationalAgent aiAgent,
-        IPerfumeRepository perfumeRepository,
+        IProductRepository perfumeRepository,
         IBrandRepository brandRepository,
         IManufacturerRepository manufacturerRepository,
         ISupplierRepository supplierRepository,

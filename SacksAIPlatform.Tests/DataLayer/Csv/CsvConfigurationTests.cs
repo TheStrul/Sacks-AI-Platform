@@ -73,7 +73,7 @@ public class CsvConfigurationTests
         Assert.Equal(5, config.ColumnMapping.Count);
         
         // Check basic mappings
-        Assert.Equal(PropertyType.PerfumeCode, config.GetPropertyType(0));
+        Assert.Equal(PropertyType.Code, config.GetPropertyType(0));
         Assert.Equal(PropertyType.Name, config.GetPropertyType(1));
         Assert.Equal(PropertyType.Brand, config.GetPropertyType(2));
         Assert.Equal(PropertyType.Size, config.GetPropertyType(3));
@@ -91,7 +91,7 @@ public class CsvConfigurationTests
             EndAtRow = 100,
             ColumnMapping = new Dictionary<int, PropertyType>
             {
-                { 0, PropertyType.PerfumeCode },
+                { 0, PropertyType.Code },
                 { 1, PropertyType.Name }
             }
         };
@@ -194,13 +194,13 @@ public class CsvConfigurationTests
         {
             ColumnMapping = new Dictionary<int, PropertyType>
             {
-                { 0, PropertyType.PerfumeCode },
+                { 0, PropertyType.Code },
                 { 5, PropertyType.Brand }
             }
         };
 
         // Act & Assert
-        Assert.Equal(PropertyType.PerfumeCode, config.GetPropertyType(0));
+        Assert.Equal(PropertyType.Code, config.GetPropertyType(0));
         Assert.Equal(PropertyType.Brand, config.GetPropertyType(5));
         Assert.Equal(PropertyType.Ignore, config.GetPropertyType(999)); // Non-existent column
     }

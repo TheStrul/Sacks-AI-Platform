@@ -7,10 +7,10 @@ namespace SacksAIPlatform.DataLayer.Repositories.Implementations;
 
 public class Repository<T> : IRepository<T> where T : class
 {
-    protected readonly PerfumeDbContext _context;
+    protected readonly SacksDbContext _context;
     protected readonly DbSet<T> _dbSet;
 
-    public Repository(PerfumeDbContext context)
+    public Repository(SacksDbContext context)
     {
         _context = context;
         _dbSet = context.Set<T>();

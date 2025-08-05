@@ -8,13 +8,13 @@ namespace SacksAIPlatform.LogicLayer.Services;
 
 public class PerfumeImportService
 {
-    private readonly ICsvPerfumeConverter _csvConverter;
-    private readonly PerfumeDbContext _context;
+    private readonly ICsvProductConverter _csvConverter;
+    private readonly SacksDbContext _context;
     private readonly ILogger<PerfumeImportService> _logger;
 
     public PerfumeImportService(
-        ICsvPerfumeConverter csvConverter,
-        PerfumeDbContext context,
+        ICsvProductConverter csvConverter,
+        SacksDbContext context,
         ILogger<PerfumeImportService> logger)
     {
         _csvConverter = csvConverter;
@@ -27,7 +27,7 @@ public class PerfumeImportService
         _logger.LogInformation("Starting perfume import from CSV: {CsvFilePath}", csvFilePath);
         
         // Convert CSV to perfumes
-        var conversionResult = await _csvConverter.ConvertCsvToPerfumesAsync(csvFilePath);
+        var conversionResult = await _csvConverter.ConvertFileToProductsAsync(csvFilePath);
         
         _logger.LogInformation("CSV conversion completed. Valid records: {ValidCount}, Errors: {ErrorCount}", 
             conversionResult.ValidRecordsCount, conversionResult.ErrorRecordsCount);
@@ -42,12 +42,12 @@ public class PerfumeImportService
             TotalRecordsProcessed = conversionResult.TotalRecordsProcessed,
             CsvValidationErrors = conversionResult.ValidationErrors,
             UnmatchedBrands = new List<UnmatchedBrand>(),
-            SuccessfullyImported = new List<Perfume>(),
+            SuccessfullyImported = new List<Product>(),
             BrandMappingErrors = new List<BrandMappingError>()
         };
         
         // Match brands and prepare perfumes for import
-        foreach (var perfume in conversionResult.ValidPerfumes)
+        foreach (var perfume in conversionResult.ValidProducts)
         {
             var brandInfo = ExtractBrandFromRemarks(perfume.Remarks);
             var matchedBrand = FindMatchingBrand(brandInfo, existingBrands);
@@ -63,14 +63,14 @@ public class PerfumeImportService
                 {
                     BrandName = brandInfo,
                     PerfumeName = perfume.Name,
-                    UPC = perfume.PerfumeCode
+                    UPC = perfume.Code
                 });
                 
                 importResult.BrandMappingErrors.Add(new BrandMappingError
                 {
                     PerfumeName = perfume.Name,
                     ExtractedBrandName = brandInfo,
-                    UPC = perfume.PerfumeCode,
+                    UPC = perfume.Code,
                     ErrorMessage = $"No matching brand found for '{brandInfo}'"
                 });
             }
@@ -82,14 +82,14 @@ public class PerfumeImportService
         return importResult;
     }
     
-    public async Task<int> SaveMatchedPerfumesToDatabaseAsync(List<Perfume> perfumes)
+    public async Task<int> SaveMatchedPerfumesToDatabaseAsync(List<Product> perfumes)
     {
         if (!perfumes.Any())
             return 0;
             
         _logger.LogInformation("Saving {Count} perfumes to database", perfumes.Count);
         
-        await _context.Perfumes.AddRangeAsync(perfumes);
+        await _context.Producs.AddRangeAsync(perfumes);
         var savedCount = await _context.SaveChangesAsync();
         
         _logger.LogInformation("Successfully saved {SavedCount} perfumes to database", savedCount);
@@ -160,10 +160,10 @@ public class PerfumeImportService
 public class PerfumeImportResult
 {
     public int TotalRecordsProcessed { get; set; }
-    public List<Perfume> SuccessfullyImported { get; set; } = new();
+    public List<Product> SuccessfullyImported { get; set; } = new();
     public List<UnmatchedBrand> UnmatchedBrands { get; set; } = new();
     public List<BrandMappingError> BrandMappingErrors { get; set; } = new();
-    public List<SacksAIPlatform.DataLayer.Csv.Interfaces.CsvValidationError> CsvValidationErrors { get; set; } = new();
+    public List<SacksAIPlatform.DataLayer.Csv.Interfaces.FileValidationError> CsvValidationErrors { get; set; } = new();
     
     public int SuccessfullyImportedCount => SuccessfullyImported.Count;
     public int UnmatchedBrandsCount => UnmatchedBrands.Count;

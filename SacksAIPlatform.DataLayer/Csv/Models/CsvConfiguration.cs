@@ -103,7 +103,7 @@ public class CsvConfiguration
             MinimumColumns = 5,
             ColumnMapping = new Dictionary<int, PropertyType>
             {
-                { 0, PropertyType.PerfumeCode },
+                { 0, PropertyType.Code },
                 { 1, PropertyType.Name },
                 { 2, PropertyType.Brand },
                 { 3, PropertyType.Size },
