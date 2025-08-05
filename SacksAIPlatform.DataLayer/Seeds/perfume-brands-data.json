@@ -1,0 +1,1005 @@
+{
+  "manufacturers": [
+    {
+      "id": 1,
+      "name": "Mäurer & Wirtz",
+      "website": "https://www.maurer-wirtz.com"
+    },
+    {
+      "id": 2,
+      "name": "Inter Parfums, Inc.",
+      "website": "https://www.interparfumsinc.com"
+    },
+    {
+      "id": 3,
+      "name": "LVMH",
+      "website": "https://www.lvmh.com"
+    },
+    {
+      "id": 4,
+      "name": "Ajmal Perfumes",
+      "website": "https://www.ajmalperfume.com"
+    },
+    {
+      "id": 5,
+      "name": "Oman Perfumery LLC (Amouage)",
+      "website": "https://amouage.com"
+    },
+    {
+      "id": 6,
+      "name": "Puig, S.L.",
+      "website": "https://www.puig.com"
+    },
+    {
+      "id": 7,
+      "name": "Arabian Oud Co.",
+      "website": "https://arabianoud.com"
+    },
+    {
+      "id": 8,
+      "name": "LUXE Brands, Inc.",
+      "website": "https://luxebrands.com"
+    },
+    {
+      "id": 9,
+      "name": "Sterling Perfumes Industries LLC",
+      "website": "https://www.sterlingperfumes.com"
+    },
+    {
+      "id": 10,
+      "name": "L'Oréal S.A.",
+      "website": "https://www.loreal.com"
+    },
+    {
+      "id": 11,
+      "name": "Bath & Body Works, Inc.",
+      "website": "https://www.bathandbodyworks.com"
+    },
+    {
+      "id": 12,
+      "name": "Lalique Group",
+      "website": "https://www.lalique-group.com"
+    },
+    {
+      "id": 13,
+      "name": "Bond No. 9 (Laurice & Co.)",
+      "website": "https://www.bondno9.com"
+    },
+    {
+      "id": 14,
+      "name": "Coty, Inc.",
+      "website": "https://www.coty.com"
+    },
+    {
+      "id": 15,
+      "name": "Parfums Caron",
+      "website": "https://www.parfumscaron.com"
+    },
+    {
+      "id": 16,
+      "name": "Designer Parfums Ltd.",
+      "website": "https://www.designerparfums.com"
+    },
+    {
+      "id": 17,
+      "name": "Chanel S.A.",
+      "website": "https://www.chanel.com"
+    },
+    {
+      "id": 18,
+      "name": "Clive Christian Perfume Co.",
+      "website": "https://www.clivechristian.com"
+    },
+    {
+      "id": 19,
+      "name": "Clean Beauty Collective",
+      "website": "https://www.cleanbeauty.com"
+    },
+    {
+      "id": 20,
+      "name": "Comme des Garçons (self-produced)",
+      "website": "https://www.comme-des-garcons.com"
+    },
+    {
+      "id": 21,
+      "name": "Demeter Fragrance Library, Inc.",
+      "website": "https://www.demeterfragrance.com"
+    },
+    {
+      "id": 22,
+      "name": "Diptyque (Manzanita Capital)",
+      "website": "https://www.diptyqueparis.com"
+    },
+    {
+      "id": 23,
+      "name": "EuroItalia Srl",
+      "website": "https://www.euroitalia.com"
+    },
+    {
+      "id": 24,
+      "name": "Give Back Beauty (Brands Beyond Beauty)",
+      "website": "https://www.givebackbeauty.com"
+    },
+    {
+      "id": 25,
+      "name": "Estée Lauder Companies",
+      "website": "https://www.elcompanies.com"
+    },
+    {
+      "id": 26,
+      "name": "Etat Libre d'Orange (self-produced)",
+      "website": "https://etatlibredorange.com"
+    },
+    {
+      "id": 27,
+      "name": "Perfume Holding",
+      "website": "https://www.perfumeholding.com"
+    },
+    {
+      "id": 28,
+      "name": "J. Floris Ltd. (independent)",
+      "website": "https://www.florislondon.com"
+    },
+    {
+      "id": 29,
+      "name": "Revlon, Inc. (Elizabeth Arden)",
+      "website": "https://www.revloninc.com"
+    },
+    {
+      "id": 30,
+      "name": "Glossier, Inc.",
+      "website": "https://www.glossier.com"
+    },
+    {
+      "id": 31,
+      "name": "Goldfield & Banks",
+      "website": "https://goldfieldandbanks.com"
+    },
+    {
+      "id": 32,
+      "name": "Hermès (Hermès Parfums)",
+      "website": "https://www.hermes.com"
+    },
+    {
+      "id": 33,
+      "name": "Perris Group",
+      "website": "https://www.perrisgroup.com"
+    },
+    {
+      "id": 34,
+      "name": "Shiseido Co.",
+      "website": "https://www.shiseido.com"
+    },
+    {
+      "id": 35,
+      "name": "Jacques Bogart Group",
+      "website": "https://www.jacques-bogart.com"
+    },
+    {
+      "id": 36,
+      "name": "Juliette Has a Gun (independent)",
+      "website": "https://www.juliettehasagun.com"
+    },
+    {
+      "id": 37,
+      "name": "La Perla Beauty (Luxe Holdings)",
+      "website": "https://www.laperlabeauty.com"
+    },
+    {
+      "id": 38,
+      "name": "Lattafa Perfumes LLC",
+      "website": "https://lattafa.com"
+    },
+    {
+      "id": 39,
+      "name": "Parfums M. Micallef",
+      "website": "https://www.parfumsmicallef.com"
+    },
+    {
+      "id": 40,
+      "name": "Mancera Parfums",
+      "website": "https://www.manceraparfums.com"
+    },
+    {
+      "id": 41,
+      "name": "Masque Milano Srl",
+      "website": "https://masquemilano.com"
+    },
+    {
+      "id": 42,
+      "name": "Kao Group (Molton Brown Ltd.)",
+      "website": "https://www.kao.com"
+    },
+    {
+      "id": 43,
+      "name": "Montale Parfums",
+      "website": "https://www.montaleparfums.com"
+    },
+    {
+      "id": 44,
+      "name": "Nishane (independent)",
+      "website": "https://www.nishane.com.tr"
+    },
+    {
+      "id": 45,
+      "name": "Oriflame Cosmetics",
+      "website": "https://corporate.oriflame.com"
+    },
+    {
+      "id": 46,
+      "name": "Parlux Fragrances",
+      "website": "https://www.parlux.com"
+    },
+    {
+      "id": 47,
+      "name": "Parfums de Marly (independent)",
+      "website": "https://www.parfums-de-marly.com"
+    },
+    {
+      "id": 48,
+      "name": "Natura &Co",
+      "website": "https://www.naturaeco.com"
+    },
+    {
+      "id": 49,
+      "name": "Perfumes y Diseño",
+      "website": "https://www.perfumesydiseno.com"
+    },
+    {
+      "id": 50,
+      "name": "Angelini Beauty (Give Back Beauty)",
+      "website": "https://www.angelinibeauty.com"
+    },
+    {
+      "id": 51,
+      "name": "Tauer Perfumes (Andy Tauer)",
+      "website": "https://tauerperfumes.com"
+    },
+    {
+      "id": 52,
+      "name": "Victoria's Secret & Co.",
+      "website": "https://www.victoriassecret.com"
+    },
+    {
+      "id": 53,
+      "name": "Wipro Ltd. (Lornamead)",
+      "website": "https://wiproconsumercare.com"
+    },
+    {
+      "id": 54,
+      "name": "Zoologist Inc. (independent)",
+      "website": "https://www.zoologistperfumes.com"
+    },
+    {
+      "id": 55,
+      "name": "Roja Parfums Ltd.",
+      "website": "https://www.rojaparfums.com"
+    },
+    {
+      "id": 56,
+      "name": "Officina Profumo-Farmaceutica SMN",
+      "website": "https://www.smnovella.com"
+    },
+    {
+      "id": 57,
+      "name": "Swiss Arabian Perfume Group",
+      "website": "https://www.swissarabian.com"
+    }
+  ],
+  "brands": [
+    {
+      "id": 1,
+      "name": "4711 (Original Eau de Cologne)",
+      "manufacturerId": 1,
+      "countryOfOrigin": "Germany"
+    },
+    {
+      "id": 2,
+      "name": "Abercrombie & Fitch",
+      "manufacturerId": 2,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 3,
+      "name": "Acqua di Parma",
+      "manufacturerId": 3,
+      "countryOfOrigin": "Italy"
+    },
+    {
+      "id": 4,
+      "name": "Ajmal",
+      "manufacturerId": 4,
+      "countryOfOrigin": "UnitedArabEmirates"
+    },
+    {
+      "id": 5,
+      "name": "Amouage",
+      "manufacturerId": 5,
+      "countryOfOrigin": "Oman"
+    },
+    {
+      "id": 6,
+      "name": "Anna Sui",
+      "manufacturerId": 2,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 7,
+      "name": "Antonio Banderas",
+      "manufacturerId": 6,
+      "countryOfOrigin": "Spain"
+    },
+    {
+      "id": 8,
+      "name": "Arabian Oud",
+      "manufacturerId": 7,
+      "countryOfOrigin": "SaudiArabia"
+    },
+    {
+      "id": 9,
+      "name": "Ariana Grande",
+      "manufacturerId": 8,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 10,
+      "name": "Armaf",
+      "manufacturerId": 9,
+      "countryOfOrigin": "UnitedArabEmirates"
+    },
+    {
+      "id": 11,
+      "name": "Atelier Cologne",
+      "manufacturerId": 10,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 12,
+      "name": "Azzaro",
+      "manufacturerId": 10,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 13,
+      "name": "Bath & Body Works",
+      "manufacturerId": 11,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 14,
+      "name": "Bentley",
+      "manufacturerId": 12,
+      "countryOfOrigin": "UnitedKingdom"
+    },
+    {
+      "id": 15,
+      "name": "Boucheron",
+      "manufacturerId": 2,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 16,
+      "name": "Bond No. 9",
+      "manufacturerId": 13,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 17,
+      "name": "Bulgari (Bvlgari)",
+      "manufacturerId": 3,
+      "countryOfOrigin": "Italy"
+    },
+    {
+      "id": 18,
+      "name": "Burberry",
+      "manufacturerId": 14,
+      "countryOfOrigin": "UnitedKingdom"
+    },
+    {
+      "id": 19,
+      "name": "Cacharel",
+      "manufacturerId": 10,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 20,
+      "name": "Calvin Klein",
+      "manufacturerId": 14,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 21,
+      "name": "Carolina Herrera",
+      "manufacturerId": 6,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 22,
+      "name": "Caron",
+      "manufacturerId": 15,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 23,
+      "name": "Cerruti 1881",
+      "manufacturerId": 16,
+      "countryOfOrigin": "Italy"
+    },
+    {
+      "id": 24,
+      "name": "Chanel",
+      "manufacturerId": 17,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 25,
+      "name": "Chloé",
+      "manufacturerId": 14,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 26,
+      "name": "Christian Louboutin",
+      "manufacturerId": 6,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 27,
+      "name": "Clive Christian",
+      "manufacturerId": 18,
+      "countryOfOrigin": "UnitedKingdom"
+    },
+    {
+      "id": 28,
+      "name": "Clean (Clean Reserve)",
+      "manufacturerId": 19,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 29,
+      "name": "Comme des Garçons Parfums",
+      "manufacturerId": 20,
+      "countryOfOrigin": "Japan"
+    },
+    {
+      "id": 30,
+      "name": "Coach",
+      "manufacturerId": 2,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 31,
+      "name": "David Beckham",
+      "manufacturerId": 14,
+      "countryOfOrigin": "UnitedKingdom"
+    },
+    {
+      "id": 32,
+      "name": "Demeter Fragrance Library",
+      "manufacturerId": 21,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 33,
+      "name": "Diesel",
+      "manufacturerId": 10,
+      "countryOfOrigin": "Italy"
+    },
+    {
+      "id": 34,
+      "name": "Diptyque",
+      "manufacturerId": 22,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 35,
+      "name": "Dior (Parfums Christian Dior)",
+      "manufacturerId": 3,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 36,
+      "name": "Dolce & Gabbana",
+      "manufacturerId": 23,
+      "countryOfOrigin": "Italy"
+    },
+    {
+      "id": 37,
+      "name": "Dsquared²",
+      "manufacturerId": 23,
+      "countryOfOrigin": "Canada"
+    },
+    {
+      "id": 38,
+      "name": "Dunhill",
+      "manufacturerId": 2,
+      "countryOfOrigin": "UnitedKingdom"
+    },
+    {
+      "id": 39,
+      "name": "Elie Saab",
+      "manufacturerId": 24,
+      "countryOfOrigin": "Lebanon"
+    },
+    {
+      "id": 40,
+      "name": "Estée Lauder (brand)",
+      "manufacturerId": 25,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 41,
+      "name": "Etat Libre d'Orange",
+      "manufacturerId": 26,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 42,
+      "name": "Ferrari (Scuderia Ferrari)",
+      "manufacturerId": 27,
+      "countryOfOrigin": "Italy"
+    },
+    {
+      "id": 43,
+      "name": "Floris of London",
+      "manufacturerId": 28,
+      "countryOfOrigin": "UnitedKingdom"
+    },
+    {
+      "id": 44,
+      "name": "Ghost",
+      "manufacturerId": 16,
+      "countryOfOrigin": "UnitedKingdom"
+    },
+    {
+      "id": 45,
+      "name": "Giorgio Armani",
+      "manufacturerId": 10,
+      "countryOfOrigin": "Italy"
+    },
+    {
+      "id": 46,
+      "name": "Giorgio Beverly Hills",
+      "manufacturerId": 29,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 47,
+      "name": "Givenchy (Parfums Givenchy)",
+      "manufacturerId": 3,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 48,
+      "name": "Glossier (Glossier You)",
+      "manufacturerId": 30,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 49,
+      "name": "Goldfield & Banks",
+      "manufacturerId": 31,
+      "countryOfOrigin": "Australia"
+    },
+    {
+      "id": 50,
+      "name": "Guerlain",
+      "manufacturerId": 3,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 51,
+      "name": "Gucci",
+      "manufacturerId": 14,
+      "countryOfOrigin": "Italy"
+    },
+    {
+      "id": 52,
+      "name": "Guess",
+      "manufacturerId": 2,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 53,
+      "name": "Hermès",
+      "manufacturerId": 32,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 54,
+      "name": "Hollister",
+      "manufacturerId": 2,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 55,
+      "name": "Houbigant",
+      "manufacturerId": 33,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 56,
+      "name": "Hugo Boss",
+      "manufacturerId": 14,
+      "countryOfOrigin": "Germany"
+    },
+    {
+      "id": 57,
+      "name": "Issey Miyake",
+      "manufacturerId": 34,
+      "countryOfOrigin": "Japan"
+    },
+    {
+      "id": 58,
+      "name": "Jacques Bogart (Bogart Group)",
+      "manufacturerId": 35,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 59,
+      "name": "Jaguar",
+      "manufacturerId": 12,
+      "countryOfOrigin": "UnitedKingdom"
+    },
+    {
+      "id": 60,
+      "name": "Jean Paul Gaultier",
+      "manufacturerId": 6,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 61,
+      "name": "Jennifer Lopez",
+      "manufacturerId": 16,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 62,
+      "name": "Jil Sander",
+      "manufacturerId": 14,
+      "countryOfOrigin": "Germany"
+    },
+    {
+      "id": 63,
+      "name": "Jimmy Choo",
+      "manufacturerId": 2,
+      "countryOfOrigin": "UnitedKingdom"
+    },
+    {
+      "id": 64,
+      "name": "Jo Malone London",
+      "manufacturerId": 25,
+      "countryOfOrigin": "UnitedKingdom"
+    },
+    {
+      "id": 65,
+      "name": "Joop!",
+      "manufacturerId": 14,
+      "countryOfOrigin": "Germany"
+    },
+    {
+      "id": 66,
+      "name": "Juliette Has a Gun",
+      "manufacturerId": 36,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 67,
+      "name": "Karl Lagerfeld",
+      "manufacturerId": 2,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 68,
+      "name": "Kenzo",
+      "manufacturerId": 3,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 69,
+      "name": "Kilian (By Kilian)",
+      "manufacturerId": 25,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 70,
+      "name": "Lacoste",
+      "manufacturerId": 2,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 71,
+      "name": "La Perla",
+      "manufacturerId": 37,
+      "countryOfOrigin": "Italy"
+    },
+    {
+      "id": 72,
+      "name": "Lalique",
+      "manufacturerId": 12,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 73,
+      "name": "Lancôme",
+      "manufacturerId": 10,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 74,
+      "name": "Lanvin",
+      "manufacturerId": 2,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 75,
+      "name": "Lattafa",
+      "manufacturerId": 38,
+      "countryOfOrigin": "UnitedArabEmirates"
+    },
+    {
+      "id": 76,
+      "name": "Le Labo",
+      "manufacturerId": 25,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 77,
+      "name": "Louis Vuitton",
+      "manufacturerId": 3,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 78,
+      "name": "M. Micallef",
+      "manufacturerId": 39,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 79,
+      "name": "Mancera",
+      "manufacturerId": 40,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 80,
+      "name": "Marc Jacobs",
+      "manufacturerId": 14,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 81,
+      "name": "Masque Milano",
+      "manufacturerId": 41,
+      "countryOfOrigin": "Italy"
+    },
+    {
+      "id": 82,
+      "name": "Michael Kors",
+      "manufacturerId": 23,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 83,
+      "name": "Missoni",
+      "manufacturerId": 23,
+      "countryOfOrigin": "Italy"
+    },
+    {
+      "id": 84,
+      "name": "Molton Brown",
+      "manufacturerId": 42,
+      "countryOfOrigin": "UnitedKingdom"
+    },
+    {
+      "id": 85,
+      "name": "Montblanc",
+      "manufacturerId": 2,
+      "countryOfOrigin": "Germany"
+    },
+    {
+      "id": 86,
+      "name": "Montale",
+      "manufacturerId": 43,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 87,
+      "name": "Moschino",
+      "manufacturerId": 23,
+      "countryOfOrigin": "Italy"
+    },
+    {
+      "id": 88,
+      "name": "Mugler (Thierry Mugler)",
+      "manufacturerId": 10,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 89,
+      "name": "Narciso Rodriguez",
+      "manufacturerId": 34,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 90,
+      "name": "Nina Ricci",
+      "manufacturerId": 6,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 91,
+      "name": "Nishane",
+      "manufacturerId": 44,
+      "countryOfOrigin": "Turkey"
+    },
+    {
+      "id": 92,
+      "name": "Oriflame",
+      "manufacturerId": 45,
+      "countryOfOrigin": "Sweden"
+    },
+    {
+      "id": 93,
+      "name": "Oscar de la Renta",
+      "manufacturerId": 2,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 94,
+      "name": "Paco Rabanne",
+      "manufacturerId": 6,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 95,
+      "name": "Parfums de Marly",
+      "manufacturerId": 47,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 96,
+      "name": "Penhaligon's",
+      "manufacturerId": 6,
+      "countryOfOrigin": "UnitedKingdom"
+    },
+    {
+      "id": 97,
+      "name": "Playboy",
+      "manufacturerId": 16,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 98,
+      "name": "Prada",
+      "manufacturerId": 10,
+      "countryOfOrigin": "Italy"
+    },
+    {
+      "id": 99,
+      "name": "Ralph Lauren",
+      "manufacturerId": 10,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 100,
+      "name": "Roja Parfums",
+      "manufacturerId": 55,
+      "countryOfOrigin": "UnitedKingdom"
+    },
+    {
+      "id": 101,
+      "name": "Salvatore Ferragamo",
+      "manufacturerId": 2,
+      "countryOfOrigin": "Italy"
+    },
+    {
+      "id": 102,
+      "name": "Santa Maria Novella",
+      "manufacturerId": 56,
+      "countryOfOrigin": "Italy"
+    },
+    {
+      "id": 103,
+      "name": "Serge Lutens",
+      "manufacturerId": 34,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 104,
+      "name": "Shiseido (brand)",
+      "manufacturerId": 34,
+      "countryOfOrigin": "Japan"
+    },
+    {
+      "id": 105,
+      "name": "Swiss Arabian",
+      "manufacturerId": 57,
+      "countryOfOrigin": "UnitedArabEmirates"
+    },
+    {
+      "id": 106,
+      "name": "The Body Shop",
+      "manufacturerId": 48,
+      "countryOfOrigin": "UnitedKingdom"
+    },
+    {
+      "id": 107,
+      "name": "Tiffany & Co.",
+      "manufacturerId": 14,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 108,
+      "name": "Tom Ford",
+      "manufacturerId": 25,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 109,
+      "name": "Tous",
+      "manufacturerId": 49,
+      "countryOfOrigin": "Spain"
+    },
+    {
+      "id": 110,
+      "name": "Trussardi",
+      "manufacturerId": 50,
+      "countryOfOrigin": "Italy"
+    },
+    {
+      "id": 111,
+      "name": "Tauer Perfumes",
+      "manufacturerId": 51,
+      "countryOfOrigin": "Switzerland"
+    },
+    {
+      "id": 112,
+      "name": "Valentino",
+      "manufacturerId": 10,
+      "countryOfOrigin": "Italy"
+    },
+    {
+      "id": 113,
+      "name": "Van Cleef & Arpels",
+      "manufacturerId": 2,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 114,
+      "name": "Versace",
+      "manufacturerId": 23,
+      "countryOfOrigin": "Italy"
+    },
+    {
+      "id": 115,
+      "name": "Viktor & Rolf",
+      "manufacturerId": 10,
+      "countryOfOrigin": "Netherlands"
+    },
+    {
+      "id": 116,
+      "name": "Victoria's Secret",
+      "manufacturerId": 52,
+      "countryOfOrigin": "USA"
+    },
+    {
+      "id": 117,
+      "name": "Yardley London",
+      "manufacturerId": 53,
+      "countryOfOrigin": "UnitedKingdom"
+    },
+    {
+      "id": 118,
+      "name": "Yves Saint Laurent",
+      "manufacturerId": 10,
+      "countryOfOrigin": "France"
+    },
+    {
+      "id": 119,
+      "name": "Zoologist Perfumes",
+      "manufacturerId": 54,
+      "countryOfOrigin": "Canada"
+    }
+  ]
+}

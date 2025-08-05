@@ -15,4 +15,8 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Seeds\perfume-brands-data.json" />
+  </ItemGroup>
+
 </Project>
