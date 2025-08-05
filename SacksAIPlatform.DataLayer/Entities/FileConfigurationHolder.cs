@@ -54,7 +54,7 @@ public class FileConfigurationHolder
     /// Contains all the mapping and parsing configuration
     /// </summary>
     [Required]
-    [Column(TypeName = "nvarchar(max)")]
+    [Column(TypeName = "LONGTEXT")]
     public string ConfigurationJson { get; set; } = string.Empty;
     
     /// <summary>

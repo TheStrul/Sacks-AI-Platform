@@ -10,9 +10,9 @@ namespace SacksAIPlatform.LogicLayer.Services;
 /// Business-specific AI agent that extends the generic infrastructure AI
 /// Adds perfume inventory management capabilities
 /// </summary>
-public class PerfumeInventoryAIService
+public class ProductsInventoryAIService
 {
-    private readonly ILogger<PerfumeInventoryAIService> _logger;
+    private readonly ILogger<ProductsInventoryAIService> _logger;
     private readonly IConversationalAgent _aiAgent;
     
     // Business-specific dependencies
@@ -23,8 +23,8 @@ public class PerfumeInventoryAIService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IFileDataReader _fileHandler;
 
-    public PerfumeInventoryAIService(
-        ILogger<PerfumeInventoryAIService> logger,
+    public ProductsInventoryAIService(
+        ILogger<ProductsInventoryAIService> logger,
         IConversationalAgent aiAgent,
         IProductRepository perfumeRepository,
         IBrandRepository brandRepository,

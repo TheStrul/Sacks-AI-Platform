@@ -6,16 +6,16 @@ using Microsoft.Extensions.Logging;
 
 namespace SacksAIPlatform.LogicLayer.Services;
 
-public class PerfumeImportService
+public class ProductsImportService
 {
     private readonly IFiletoProductConverter _csvConverter;
     private readonly SacksDbContext _context;
-    private readonly ILogger<PerfumeImportService> _logger;
+    private readonly ILogger<ProductsImportService> _logger;
 
-    public PerfumeImportService(
+    public ProductsImportService(
         IFiletoProductConverter csvConverter,
         SacksDbContext context,
-        ILogger<PerfumeImportService> logger)
+        ILogger<ProductsImportService> logger)
     {
         _csvConverter = csvConverter;
         _context = context;
@@ -89,7 +89,7 @@ public class PerfumeImportService
             
         _logger.LogInformation("Saving {Count} perfumes to database", perfumes.Count);
         
-        await _context.Producs.AddRangeAsync(perfumes);
+        await _context.Products.AddRangeAsync(perfumes);
         var savedCount = await _context.SaveChangesAsync();
         
         _logger.LogInformation("Successfully saved {SavedCount} perfumes to database", savedCount);

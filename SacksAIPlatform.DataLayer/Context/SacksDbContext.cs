@@ -12,7 +12,7 @@ public class SacksDbContext : DbContext
     public DbSet<Manufacturer> Manufacturers { get; set; }
     public DbSet<Brand> Brands { get; set; }
     public DbSet<Supplier> Suppliers { get; set; }
-    public DbSet<Product> Producs { get; set; }
+    public DbSet<Product> Products { get; set; }
     public DbSet<FileConfigurationHolder> FileConfigurationHolders { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -59,7 +59,7 @@ public class SacksDbContext : DbContext
             entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
             entity.Property(e => e.FileNamePattern).IsRequired().HasMaxLength(100);
             entity.Property(e => e.FileExtension).IsRequired().HasMaxLength(10);
-            entity.Property(e => e.ConfigurationJson).IsRequired().HasColumnType("nvarchar(max)");
+            entity.Property(e => e.ConfigurationJson).IsRequired().HasColumnType("LONGTEXT");
             entity.Property(e => e.Remarks).HasMaxLength(500);
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.UpdatedAt).IsRequired();

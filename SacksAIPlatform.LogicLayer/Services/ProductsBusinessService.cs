@@ -4,7 +4,7 @@ namespace SacksAIPlatform.LogicLayer.Services;
 /// Business logic service for perfume data management
 /// This layer will contain data validation, business rules, and orchestration logic
 /// </summary>
-public class PerfumeBusinessService
+public class ProductsBusinessService
 {
     // Placeholder for future business logic implementation
     // Will include:
