@@ -40,6 +40,12 @@ public class BrandRepository : Repository<Brand>, IBrandRepository
         return await _dbSet.Include(b => b.Manufacturer)
                           .FirstOrDefaultAsync(b => b.Name == name);
     }
+    
+    public async Task<Brand?> FindByNameAsync(string name)
+    {
+        return await _dbSet.Include(b => b.Manufacturer)
+                          .FirstOrDefaultAsync(b => b.Name.ToLower() == name.ToLower());
+    }
 
     public async Task<IEnumerable<Brand>> GetByManufacturerIdAsync(int manufacturerId)
     {

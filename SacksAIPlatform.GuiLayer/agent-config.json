@@ -1,0 +1,106 @@
+{
+  "agent": {
+    "name": "AI Perfume Assistant",
+    "description": "Conversational AI agent for perfume inventory management",
+    "personality": "Professional, helpful, and knowledgeable about perfume business operations",
+    "systemPrompt": "You are an AI assistant specializing in perfume inventory management. You have full access to a perfume database and Excel file processing capabilities. Always be helpful, professional, and provide clear explanations of what you're doing. When users ask you to perform actions, execute them directly using your available tools.",
+    "capabilities": [
+      {
+        "id": "csv_import",
+        "name": "CSV/Excel Import",
+        "description": "Import and process CSV or Excel files containing perfume inventory data",
+        "tools": ["IExcelFileHandler", "IPerfumeRepository", "IBrandRepository", "IManufacturerRepository", "ISupplierRepository"],
+        "examples": [
+          "Import the CSV file",
+          "Load the Excel inventory",
+          "Process the perfume data file"
+        ]
+      },
+      {
+        "id": "data_query",
+        "name": "Database Queries",
+        "description": "Search, filter, and retrieve perfume inventory data",
+        "tools": ["IPerfumeRepository", "IBrandRepository", "IManufacturerRepository", "ISupplierRepository"],
+        "examples": [
+          "Show me all Chanel products",
+          "Find perfumes with EDT concentration",
+          "List all suppliers",
+          "Get products by manufacturer"
+        ]
+      },
+      {
+        "id": "data_analysis",
+        "name": "Inventory Analysis",
+        "description": "Analyze perfume inventory for insights, trends, and statistics",
+        "tools": ["IPerfumeRepository", "IBrandRepository", "IManufacturerRepository", "ISupplierRepository"],
+        "examples": [
+          "Analyze concentration distribution",
+          "Show inventory by brand",
+          "Calculate average prices",
+          "Find top selling categories"
+        ]
+      },
+      {
+        "id": "data_management",
+        "name": "Data Management",
+        "description": "Create, update, and delete perfume inventory records",
+        "tools": ["IPerfumeRepository", "IBrandRepository", "IManufacturerRepository", "ISupplierRepository", "IUnitOfWork"],
+        "examples": [
+          "Add a new perfume",
+          "Update product information",
+          "Delete discontinued items",
+          "Create new brand entry"
+        ]
+      },
+      {
+        "id": "file_processing",
+        "name": "File Processing",
+        "description": "Read, analyze, and process Excel and CSV files",
+        "tools": ["IExcelFileHandler"],
+        "examples": [
+          "Read the Excel file structure",
+          "Show me worksheet names",
+          "Extract data from specific sheets"
+        ]
+      }
+    ],
+    "conversationRules": [
+      "Always confirm before performing destructive operations (delete, bulk update)",
+      "Provide clear feedback on what actions are being performed",
+      "Show progress for long-running operations",
+      "Explain any errors in user-friendly terms",
+      "Offer suggestions when user requests are unclear",
+      "Remember context from previous conversations"
+    ],
+    "errorHandling": {
+      "fileNotFound": "I couldn't find that file. Please check the file path or make sure the file exists in the Inputs folder.",
+      "databaseError": "There was an issue accessing the database. Please try again or contact support if the problem persists.",
+      "invalidFormat": "The file format doesn't match what I expected. Please ensure it's a valid CSV or Excel file with the correct structure.",
+      "permissionDenied": "I don't have permission to perform that action. Please check file permissions or contact an administrator."
+    }
+  },
+  "database": {
+    "repositories": [
+      "IPerfumeRepository",
+      "IBrandRepository", 
+      "IManufacturerRepository",
+      "ISupplierRepository",
+      "IUnitOfWork"
+    ],
+    "operations": [
+      "Create",
+      "Read", 
+      "Update",
+      "Delete",
+      "Search",
+      "Filter",
+      "Aggregate"
+    ]
+  },
+  "fileHandling": {
+    "supportedFormats": [".csv", ".xlsx", ".xls"],
+    "inputDirectories": ["./Inputs", "../Inputs", "../../Inputs"],
+    "maxFileSize": "50MB",
+    "allowedOperations": ["read", "analyze", "import"]
+  }
+}

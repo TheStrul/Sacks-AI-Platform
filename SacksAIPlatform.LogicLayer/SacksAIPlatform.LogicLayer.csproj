@@ -2,6 +2,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SacksAIPlatform.DataLayer\SacksAIPlatform.DataLayer.csproj" />
+    <ProjectReference Include="..\SacksAIPlatform.InfrastructuresLayer\SacksAIPlatform.InfrastructuresLayer.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="OpenAI" Version="1.11.0" />
   </ItemGroup>
 
   <PropertyGroup>

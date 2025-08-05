@@ -1,0 +1,26 @@
+[
+  {
+    "id": "fe5ad4f8-ce11-458b-973d-618ca987a3e9",
+    "rule_type": "concentration_correction",
+    "pattern": "edp",
+    "action": "i need to see the original like for appruvel",
+    "confidence": 0.8,
+    "usage_count": 0,
+    "success_rate": 1,
+    "created_timestamp": "2025-08-05T01:45:47.8436708Z",
+    "last_used": null,
+    "created_by": "interactive_user"
+  },
+  {
+    "id": "aa9d7c97-e796-4a03-82ab-e4df0460a212",
+    "rule_type": "gender_correction",
+    "pattern": "unisex",
+    "action": "i need to see the original like for appruvel",
+    "confidence": 0.8,
+    "usage_count": 0,
+    "success_rate": 1,
+    "created_timestamp": "2025-08-05T01:45:47.8663297Z",
+    "last_used": null,
+    "created_by": "interactive_user"
+  }
+]

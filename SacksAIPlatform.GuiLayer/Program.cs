@@ -1,122 +1,208 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
-using Microsoft.EntityFrameworkCore;
 using Serilog;
 using SacksAIPlatform.DataLayer.Context;
 using SacksAIPlatform.DataLayer.Repositories.Interfaces;
 using SacksAIPlatform.DataLayer.Repositories.Implementations;
-using SacksAIPlatform.DataLayer.Seeds;
+using SacksAIPlatform.LogicLayer.Services;
+using SacksAIPlatform.LogicLayer.MachineLearning.Pipeline;
+using SacksAIPlatform.InfrastructuresLayer.AI.Services;
+using SacksAIPlatform.InfrastructuresLayer.AI.Interfaces;
+using SacksAIPlatform.GuiLayer.Chat;
+using SacksAIPlatform.DataLayer.Csv.Interfaces;
+using SacksAIPlatform.DataLayer.Csv.Implementations;
+using SacksAIPlatform.InfrastructuresLayer.Excel.Interfaces;
+using SacksAIPlatform.InfrastructuresLayer.Excel.Implementations;
+using SacksAIPlatform.InfrastructuresLayer.Csv.Interfaces;
+using SacksAIPlatform.InfrastructuresLayer.Csv.Implementations;
 
 namespace SacksAIPlatform.GuiLayer;
 
 class Program
 {
+    private static string? _selectedCsvFilePath = null;
+    
     static async Task Main(string[] args)
     {
-        // Configure Serilog
+        var builder = Host.CreateApplicationBuilder(args);
+
+        // Add Serilog
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Information()
             .WriteTo.Console()
             .CreateLogger();
 
+        // Add configuration
+        builder.Services.AddSingleton<IConfiguration>(serviceProvider =>
+        {
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                .AddEnvironmentVariables()
+                .Build();
+            return configuration;
+        });
+
+        // Add DbContext
+        builder.Services.AddDbContext<PerfumeDbContext>(options =>
+        {
+            var configuration = builder.Services.BuildServiceProvider().GetRequiredService<IConfiguration>();
+            var connectionString = configuration.GetConnectionString("DefaultConnection");
+            options.UseSqlServer(connectionString);
+        });
+
+        // Register repositories
+        builder.Services.AddScoped<IBrandRepository, BrandRepository>();
+        builder.Services.AddScoped<IManufacturerRepository, ManufacturerRepository>();
+        builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
+        builder.Services.AddScoped<IPerfumeRepository, PerfumeRepository>();
+        builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        // Register services
+        builder.Services.AddScoped<PerfumeBusinessService>();
+        builder.Services.AddScoped<ProductMLPipeline>();
+        builder.Services.AddScoped<PerfumeImportService>();
+        builder.Services.AddScoped<ICsvFileReader, CsvFileReader>();
+        builder.Services.AddScoped<ICsvPerfumeConverter, CsvPerfumeConverter>();
+
+        // Register AI services - Infrastructure layer AI with business service wrapper
+        builder.Services.AddScoped<IIntentRecognitionService, OpenAIIntentRecognitionService>();
+        builder.Services.AddScoped<IConversationalAgent, GenericLLMAgent>();
+        builder.Services.AddScoped<PerfumeInventoryAIService>();
+        builder.Services.AddScoped<ChatInterface>();
+        
+        // Register Excel file handler
+        builder.Services.AddScoped<IExcelFileHandler, ExcelFileHandler>();
+
+        var app = builder.Build();
+
+        // Ensure database is created
+        using (var scope = app.Services.CreateScope())
+        {
+            try
+            {
+                var context = scope.ServiceProvider.GetRequiredService<PerfumeDbContext>();
+                context.Database.EnsureCreated();
+                Log.Information("Database initialized successfully");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to initialize database: {ErrorMessage}", ex.Message);
+                return;
+            }
+        }
+
+        // Start the conversational AI interface
+        await StartChatInterfaceAsync(app);
+    }
+
+    static async Task StartChatInterfaceAsync(IHost app)
+    {
+        using var scope = app.Services.CreateScope();
+        
         try
         {
-            Log.Information("Starting Sacks AI Platform");
-
-            var host = CreateHostBuilder(args).Build();
-
-            // Run the application
-            await RunApplication(host);
-
-            Log.Information("Application completed successfully");
+            Log.Information("🤖 Starting Sacks AI Platform - Conversational Agent");
+            Log.Information("🎯 Ready for natural language interaction");
+            Log.Information("");
+            
+            var chatInterface = scope.ServiceProvider.GetRequiredService<ChatInterface>();
+            await chatInterface.StartAsync();
         }
         catch (Exception ex)
         {
-            Log.Fatal(ex, "Application terminated unexpectedly");
-        }
-        finally
-        {
-            Log.CloseAndFlush();
+            Log.Error(ex, "Failed to start chat interface: {ErrorMessage}", ex.Message);
         }
     }
 
-    static IHostBuilder CreateHostBuilder(string[] args) =>
-        Host.CreateDefaultBuilder(args)
-            .UseSerilog()
-            .ConfigureServices((context, services) =>
-            {
-                // Configure Entity Framework
-                services.AddDbContext<PerfumeDbContext>(options =>
-                    options.UseSqlServer(
-                        context.Configuration.GetConnectionString("DefaultConnection") 
-                        ?? "Server=(localdb)\\mssqllocaldb;Database=SacksAIPlatformDb;Trusted_Connection=true;MultipleActiveResultSets=true"));
-
-                // Register repositories
-                services.AddScoped<IUnitOfWork, UnitOfWork>();
-                services.AddScoped<IManufacturerRepository, ManufacturerRepository>();
-                services.AddScoped<IBrandRepository, BrandRepository>();
-                services.AddScoped<ISupplierRepository, SupplierRepository>();
-                services.AddScoped<IPerfumeRepository, PerfumeRepository>();
-            });
-
-    static async Task RunApplication(IHost host)
+    static async Task<string> SelectCsvFileAsync()
     {
-        using var scope = host.Services.CreateScope();
-        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-        var dbContext = scope.ServiceProvider.GetRequiredService<PerfumeDbContext>();
-
-        Log.Information("=== Sacks AI Platform - Perfume Database Management ===");
-        Log.Information("Architecture: 5-Layer Clean Architecture");
-        Log.Information("- OsKLayer: OS-specific operations");
-        Log.Information("- InfrastructuresLayer: External services");
-        Log.Information("- DataLayer: EF Core with Repository Pattern ✓");
-        Log.Information("- LogicLayer: Business logic");
-        Log.Information("- GuiLayer: Console interface ✓");
-        
-        Log.Information("Database: Entity Framework Core with SQL Server");
-        Log.Information("Entities: Manufacturer, Brand, Supplier, Perfume");
-        
-        // Initialize database
         try
         {
-            Log.Information("Initializing database...");
-            await dbContext.Database.MigrateAsync();
-            Log.Information("Database migrations applied successfully.");
+            Log.Information("🔍 Scanning for CSV files...");
             
-            // Seed initial data
-            Log.Information("Seeding initial data...");
-            await DatabaseSeeder.SeedAsync(dbContext);
-            Log.Information("Database seeding completed.");
+            // Get current directory
+            var currentDirectory = Directory.GetCurrentDirectory();
             
-            // Test database connection and display data
-            var manufacturers = await unitOfWork.Manufacturers.GetAllAsync();
-            var brands = await unitOfWork.Brands.GetAllAsync();
-            var suppliers = await unitOfWork.Suppliers.GetAllAsync();
-            var perfumes = await unitOfWork.Perfumes.GetAllAsync();
-            
-            Log.Information($"✅ Database initialized successfully!");
-            Log.Information($"📊 Data Summary:");
-            Log.Information($"   - Manufacturers: {manufacturers.Count()}");
-            Log.Information($"   - Brands: {brands.Count()}");
-            Log.Information($"   - Suppliers: {suppliers.Count()}");
-            Log.Information($"   - Perfumes: {perfumes.Count()}");
-            
-            // Display sample data
-            Log.Information($"📋 Sample Perfumes:");
-            foreach (var perfume in perfumes.Take(3))
+            // Search for CSV files in current directory and subdirectories
+            var csvFiles = Directory.GetFiles(currentDirectory, "*.csv", SearchOption.AllDirectories)
+                .Select(file => new FileInfo(file))
+                .OrderByDescending(file => file.LastWriteTime) // Sort by date, newest first
+                .Take(10) // Limit to 10 most recent files
+                .ToList();
+                
+            if (!csvFiles.Any())
             {
-                Log.Information($"   - {perfume.PerfumeCode}: {perfume.Name} by {perfume.Brand?.Name} ({perfume.Concentration})");
+                Log.Warning("⚠️ No CSV files found in the current directory or subdirectories.");
+                Log.Information("Current directory: {CurrentDirectory}", currentDirectory);
+                
+                // Return empty string to indicate no file found
+                return string.Empty;
+            }
+            
+            Log.Information("📁 Found {Count} CSV file(s):", csvFiles.Count);
+            Log.Information("");
+            
+            // Display files with details
+            for (int i = 0; i < csvFiles.Count; i++)
+            {
+                var file = csvFiles[i];
+                var sizeKB = file.Length / 1024.0;
+                var relativePath = Path.GetRelativePath(currentDirectory, file.FullName);
+                
+                Log.Information($"  {i + 1}. {file.Name}");
+                Log.Information($"     📍 Path: {relativePath}");
+                Log.Information($"     📊 Size: {sizeKB:F1} KB");
+                Log.Information($"     📅 Modified: {file.LastWriteTime:yyyy-MM-dd HH:mm:ss}");
+                
+                // Try to get record count
+                try
+                {
+                    var lineCount = File.ReadAllLines(file.FullName).Length - 1; // -1 for header
+                    Log.Information($"     📈 Records: ~{lineCount:N0}");
+                }
+                catch
+                {
+                    Log.Information($"     📈 Records: Unable to determine");
+                }
+                
+                Log.Information("");
+            }
+            
+            // Get user selection
+            while (true)
+            {
+                Console.Write($"Please select a file (1-{csvFiles.Count}) or 0 to exit: ");
+                var input = Console.ReadLine();
+                
+                if (int.TryParse(input, out int selection))
+                {
+                    if (selection == 0)
+                    {
+                        Log.Information("⚡ Exiting file selection");
+                        Environment.Exit(0);
+                    }
+                    
+                    if (selection >= 1 && selection <= csvFiles.Count)
+                    {
+                        var selectedFile = csvFiles[selection - 1];
+                        Log.Information("✅ Selected: {FileName}", selectedFile.Name);
+                        Log.Information("📍 Full path: {FullPath}", selectedFile.FullName);
+                        Log.Information("");
+                        
+                        return selectedFile.FullName;
+                    }
+                }
+                
+                Log.Warning("❌ Invalid selection. Please enter a number between 1 and {Count}, or 0 to exit.", csvFiles.Count);
             }
         }
         catch (Exception ex)
         {
-            Log.Error($"Database initialization failed: {ex.Message}");
-            Log.Warning("Please ensure SQL Server LocalDB is installed and running.");
+            Log.Error(ex, "Failed to scan for CSV files: {ErrorMessage}", ex.Message);
+            return string.Empty;
         }
-
-        Log.Information("Second stage implementation complete!");
-        Log.Information("✅ Initial DataStore created and populated");
-        Log.Information("Ready for next development phase...");
     }
 }

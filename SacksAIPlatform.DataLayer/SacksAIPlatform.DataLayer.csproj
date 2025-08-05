@@ -19,4 +19,8 @@
     <EmbeddedResource Include="Seeds\perfume-brands-data.json" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\SacksAIPlatform.InfrastructuresLayer\SacksAIPlatform.InfrastructuresLayer.csproj" />
+  </ItemGroup>
+
 </Project>
