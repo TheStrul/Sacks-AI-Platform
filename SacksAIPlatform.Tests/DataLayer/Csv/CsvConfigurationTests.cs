@@ -13,7 +13,7 @@ public class CsvConfigurationTests
     public void CsvConfiguration_DefaultConstructor_ShouldInitializeWithDefaults()
     {
         // Act
-        var config = new CsvConfiguration();
+        var config = new FileConfiguration();
 
         // Assert
         Assert.Equal(0, config.TitleIndex);
@@ -32,7 +32,7 @@ public class CsvConfigurationTests
     public void CreateDefaultConfiguration_ShouldReturnValidComprehensiveStockAiConfig()
     {
         // Act
-        var config = CsvConfiguration.CreateDefaultConfiguration();
+        var config = FileConfiguration.CreateDefaultConfiguration();
 
         // Assert
         Assert.Equal("ComprehensiveStockAi", config.FormatName);
@@ -65,7 +65,7 @@ public class CsvConfigurationTests
     public void CreateSimpleConfiguration_ShouldReturnValidSimpleConfig()
     {
         // Act
-        var config = CsvConfiguration.CreateSimpleConfiguration();
+        var config = FileConfiguration.CreateSimpleConfiguration();
 
         // Assert
         Assert.Equal("Simple", config.FormatName);
@@ -84,7 +84,7 @@ public class CsvConfigurationTests
     public void Validate_WithValidConfiguration_ShouldNotThrow()
     {
         // Arrange
-        var config = new CsvConfiguration
+        var config = new FileConfiguration
         {
             TitleIndex = 0,
             StartFromRow = 1,
@@ -104,7 +104,7 @@ public class CsvConfigurationTests
     public void Validate_WithInvalidStartRow_ShouldThrowException()
     {
         // Arrange
-        var config = new CsvConfiguration
+        var config = new FileConfiguration
         {
             TitleIndex = 5,
             StartFromRow = 3, // Invalid: StartFromRow <= TitleIndex
@@ -121,7 +121,7 @@ public class CsvConfigurationTests
     public void Validate_WithInvalidEndRow_ShouldThrowException()
     {
         // Arrange
-        var config = new CsvConfiguration
+        var config = new FileConfiguration
         {
             StartFromRow = 10,
             EndAtRow = 5, // Invalid: EndAtRow <= StartFromRow
@@ -138,7 +138,7 @@ public class CsvConfigurationTests
     public void Validate_WithEmptyColumnMapping_ShouldThrowException()
     {
         // Arrange
-        var config = new CsvConfiguration
+        var config = new FileConfiguration
         {
             ColumnMapping = new Dictionary<int, PropertyType>() // Empty mapping
         };
@@ -152,7 +152,7 @@ public class CsvConfigurationTests
     public void Validate_WithDuplicatePropertyMappings_ShouldThrowException()
     {
         // Arrange
-        var config = new CsvConfiguration
+        var config = new FileConfiguration
         {
             ColumnMapping = new Dictionary<int, PropertyType>
             {
@@ -171,7 +171,7 @@ public class CsvConfigurationTests
     public void Validate_WithMultipleIgnoreProperties_ShouldNotThrow()
     {
         // Arrange
-        var config = new CsvConfiguration
+        var config = new FileConfiguration
         {
             ColumnMapping = new Dictionary<int, PropertyType>
             {
@@ -190,7 +190,7 @@ public class CsvConfigurationTests
     public void GetPropertyType_WithValidColumnIndex_ShouldReturnCorrectType()
     {
         // Arrange
-        var config = new CsvConfiguration
+        var config = new FileConfiguration
         {
             ColumnMapping = new Dictionary<int, PropertyType>
             {
@@ -209,7 +209,7 @@ public class CsvConfigurationTests
     public void IsColumnIgnored_WithIgnoredColumns_ShouldReturnCorrectResult()
     {
         // Arrange
-        var config = new CsvConfiguration
+        var config = new FileConfiguration
         {
             ColumnMapping = new Dictionary<int, PropertyType>
             {
@@ -231,7 +231,7 @@ public class CsvConfigurationTests
     public void CsvConfiguration_ComplexScenario_ShouldWorkCorrectly()
     {
         // Arrange
-        var config = new CsvConfiguration
+        var config = new FileConfiguration
         {
             TitleIndex = 2,
             StartFromRow = 3,

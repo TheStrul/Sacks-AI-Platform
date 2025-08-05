@@ -76,7 +76,7 @@ class Program
         builder.Services.AddScoped<ProductMLPipeline>();
         builder.Services.AddScoped<PerfumeImportService>();
         builder.Services.AddScoped<IFileDataReader, FileDataReader>();
-        builder.Services.AddScoped<ICsvProductConverter, FiletoProductConverter>();
+        builder.Services.AddScoped<IFiletoProductConverter, FiletoProductConverter>();
 
         // Register AI services - Infrastructure layer AI with business service wrapper
         builder.Services.AddScoped<IIntentRecognitionService, OpenAIIntentRecognitionService>();

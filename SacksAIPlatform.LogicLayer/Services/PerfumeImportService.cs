@@ -8,12 +8,12 @@ namespace SacksAIPlatform.LogicLayer.Services;
 
 public class PerfumeImportService
 {
-    private readonly ICsvProductConverter _csvConverter;
+    private readonly IFiletoProductConverter _csvConverter;
     private readonly SacksDbContext _context;
     private readonly ILogger<PerfumeImportService> _logger;
 
     public PerfumeImportService(
-        ICsvProductConverter csvConverter,
+        IFiletoProductConverter csvConverter,
         SacksDbContext context,
         ILogger<PerfumeImportService> logger)
     {

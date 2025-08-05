@@ -7,7 +7,7 @@ using System.Globalization;
 
 namespace SacksAIPlatform.DataLayer.Csv.Implementations;
 
-public class FiletoProductConverter : ICsvProductConverter
+public class FiletoProductConverter : IFiletoProductConverter
 {
     private readonly IFileDataReader _fileDataReader;
 
@@ -16,9 +16,9 @@ public class FiletoProductConverter : ICsvProductConverter
         _fileDataReader = fileDataReader;
     }
 
-    public async Task<FileConversionResult> ConvertFileToProductsAsync(string csvFilePath, CsvConfiguration? configuration = null)
+    public async Task<FileConversionResult> ConvertFileToProductsAsync(string csvFilePath, FileConfiguration? configuration = null)
     {
-        configuration ??= CsvConfiguration.CreateDefaultConfiguration();
+        configuration ??= FileConfiguration.CreateDefaultConfiguration();
         configuration.Validate();
         
         var result = new FileConversionResult();
@@ -76,7 +76,7 @@ public class FiletoProductConverter : ICsvProductConverter
 
     public async Task<FileConversionResult> ConvertCsvToPerfumesAsync(string csvFilePath, bool skipFirstRow = true)
     {
-        var configuration = CsvConfiguration.CreateDefaultConfiguration();
+        var configuration = FileConfiguration.CreateDefaultConfiguration();
         configuration.StartFromRow = skipFirstRow ? 1 : 0;
         return await ConvertFileToProductsAsync(csvFilePath, configuration);
     }
@@ -95,7 +95,7 @@ public class FiletoProductConverter : ICsvProductConverter
         return matchCount >= 3; // If 3 or more fields match header keywords, consider it a title row
     }
     
-    private Product? ParseRowToPerfume(SacksAIPlatform.InfrastructuresLayer.FileProcessing.Models.FileData fileData, int rowIndex, int rowNumber, CsvConfiguration configuration)
+    private Product? ParseRowToPerfume(SacksAIPlatform.InfrastructuresLayer.FileProcessing.Models.FileData fileData, int rowIndex, int rowNumber, FileConfiguration configuration)
     {
         // Get row data from FileData
         var fields = fileData.GetRow(rowIndex);

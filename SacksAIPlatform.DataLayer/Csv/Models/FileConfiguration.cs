@@ -6,7 +6,7 @@ namespace SacksAIPlatform.DataLayer.Csv.Models;
 /// Configuration class for flexible CSV parsing and column mapping
 /// Allows different CSV formats to be processed by the same converter
 /// </summary>
-public class CsvConfiguration
+public class FileConfiguration
 {
     /// <summary>
     /// Row index where column titles/headers are located (0-based)
@@ -59,9 +59,9 @@ public class CsvConfiguration
     /// <summary>
     /// Creates a default configuration for ComprehensiveStockAi.csv format
     /// </summary>
-    public static CsvConfiguration CreateDefaultConfiguration()
+    public static FileConfiguration CreateDefaultConfiguration()
     {
-        return new CsvConfiguration
+        return new FileConfiguration
         {
             TitleIndex = 0,
             StartFromRow = 1,
@@ -91,9 +91,9 @@ public class CsvConfiguration
     /// <summary>
     /// Creates a simple configuration for basic perfume CSV files
     /// </summary>
-    public static CsvConfiguration CreateSimpleConfiguration()
+    public static FileConfiguration CreateSimpleConfiguration()
     {
-        return new CsvConfiguration
+        return new FileConfiguration
         {
             TitleIndex = 0,
             StartFromRow = 1,

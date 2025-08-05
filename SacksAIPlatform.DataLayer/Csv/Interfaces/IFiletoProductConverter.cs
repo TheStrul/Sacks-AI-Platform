@@ -3,15 +3,15 @@ using SacksAIPlatform.DataLayer.Csv.Models;
 
 namespace SacksAIPlatform.DataLayer.Csv.Interfaces;
 
-public interface ICsvProductConverter
+public interface IFiletoProductConverter
 {
     /// <summary>
     /// Converts CSV file to a list of Product entities using flexible configuration
     /// </summary>
-    /// <param name="csvFilePath">Path to the CSV file</param>
+    /// <param name="filePath">Path to the CSV file</param>
     /// <param name="configuration">CSV parsing configuration, null uses default</param>
     /// <returns>List of converted Product entities with validation results</returns>
-    Task<FileConversionResult> ConvertFileToProductsAsync(string csvFilePath, CsvConfiguration? configuration = null);
+    Task<FileConversionResult> ConvertFileToProductsAsync(string filePath, FileConfiguration? configuration = null);
 }
 
 public class FileConversionResult
