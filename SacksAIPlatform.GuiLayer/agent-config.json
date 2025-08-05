@@ -3,65 +3,54 @@
     "name": "AI Perfume Assistant",
     "description": "Conversational AI agent for perfume inventory management",
     "personality": "Professional, helpful, and knowledgeable about perfume business operations",
-    "systemPrompt": "You are an AI assistant specializing in perfume inventory management. You have full access to a perfume database and Excel file processing capabilities. Always be helpful, professional, and provide clear explanations of what you're doing. When users ask you to perform actions, execute them directly using your available tools.",
+    "systemPrompt": "You are an AI assistant specializing in perfume inventory management. You have access to database and file processing capabilities as configured. Always be helpful, professional, and provide clear explanations of what you're doing.",
     "capabilities": [
       {
-        "id": "csv_import",
-        "name": "CSV/Excel Import",
-        "description": "Import and process CSV or Excel files containing perfume inventory data",
-        "tools": ["IExcelFileHandler", "IPerfumeRepository", "IBrandRepository", "IManufacturerRepository", "ISupplierRepository"],
-        "examples": [
-          "Import the CSV file",
-          "Load the Excel inventory",
-          "Process the perfume data file"
-        ]
-      },
-      {
-        "id": "data_query",
-        "name": "Database Queries",
-        "description": "Search, filter, and retrieve perfume inventory data",
-        "tools": ["IPerfumeRepository", "IBrandRepository", "IManufacturerRepository", "ISupplierRepository"],
+        "id": "database-access",
+        "name": "Database Operations",
+        "description": "Access to perfume database repositories for CRUD operations",
+        "isEnabled": true,
+        "tools": ["PerfumeRepository", "BrandRepository", "ManufacturerRepository", "SupplierRepository"],
         "examples": [
           "Show me all Chanel products",
           "Find perfumes with EDT concentration",
-          "List all suppliers",
-          "Get products by manufacturer"
-        ]
+          "Add a new perfume to the database"
+        ],
+        "configuration": {
+          "repositories": ["PerfumeRepository", "BrandRepository", "ManufacturerRepository", "SupplierRepository"],
+          "operations": ["Create", "Read", "Update", "Delete", "Search"]
+        }
       },
       {
-        "id": "data_analysis",
+        "id": "file-processing",
+        "name": "File Handling",
+        "description": "Excel and CSV file processing for data import/export",
+        "isEnabled": true,
+        "tools": ["ExcelFileHandler", "CsvFileReader"],
+        "examples": [
+          "Import the Excel inventory file",
+          "Process the CSV data",
+          "Export perfume data to Excel"
+        ],
+        "configuration": {
+          "supportedFormats": [".xlsx", ".xls", ".csv"],
+          "inputDirectories": ["Inputs"],
+          "maxFileSize": "10MB",
+          "allowedOperations": ["Read", "Import", "Export"]
+        }
+      },
+      {
+        "id": "data-analysis",
         "name": "Inventory Analysis",
         "description": "Analyze perfume inventory for insights, trends, and statistics",
-        "tools": ["IPerfumeRepository", "IBrandRepository", "IManufacturerRepository", "ISupplierRepository"],
+        "isEnabled": true,
+        "tools": ["IPerfumeRepository", "IBrandRepository"],
         "examples": [
           "Analyze concentration distribution",
           "Show inventory by brand",
-          "Calculate average prices",
-          "Find top selling categories"
-        ]
-      },
-      {
-        "id": "data_management",
-        "name": "Data Management",
-        "description": "Create, update, and delete perfume inventory records",
-        "tools": ["IPerfumeRepository", "IBrandRepository", "IManufacturerRepository", "ISupplierRepository", "IUnitOfWork"],
-        "examples": [
-          "Add a new perfume",
-          "Update product information",
-          "Delete discontinued items",
-          "Create new brand entry"
-        ]
-      },
-      {
-        "id": "file_processing",
-        "name": "File Processing",
-        "description": "Read, analyze, and process Excel and CSV files",
-        "tools": ["IExcelFileHandler"],
-        "examples": [
-          "Read the Excel file structure",
-          "Show me worksheet names",
-          "Extract data from specific sheets"
-        ]
+          "Calculate average prices"
+        ],
+        "configuration": {}
       }
     ],
     "conversationRules": [
@@ -76,31 +65,8 @@
       "fileNotFound": "I couldn't find that file. Please check the file path or make sure the file exists in the Inputs folder.",
       "databaseError": "There was an issue accessing the database. Please try again or contact support if the problem persists.",
       "invalidFormat": "The file format doesn't match what I expected. Please ensure it's a valid CSV or Excel file with the correct structure.",
-      "permissionDenied": "I don't have permission to perform that action. Please check file permissions or contact an administrator."
+      "permissionDenied": "I don't have permission to perform that action. Please check file permissions or contact an administrator.",
+      "generalError": "An unexpected error occurred. Please try again."
     }
-  },
-  "database": {
-    "repositories": [
-      "IPerfumeRepository",
-      "IBrandRepository", 
-      "IManufacturerRepository",
-      "ISupplierRepository",
-      "IUnitOfWork"
-    ],
-    "operations": [
-      "Create",
-      "Read", 
-      "Update",
-      "Delete",
-      "Search",
-      "Filter",
-      "Aggregate"
-    ]
-  },
-  "fileHandling": {
-    "supportedFormats": [".csv", ".xlsx", ".xls"],
-    "inputDirectories": ["./Inputs", "../Inputs", "../../Inputs"],
-    "maxFileSize": "50MB",
-    "allowedOperations": ["read", "analyze", "import"]
   }
 }

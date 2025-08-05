@@ -141,6 +141,9 @@ public class LLMConversationalAgent : IConversationalAgent
 
     private string BuildSystemContext()
     {
+        var dbCapability = GetDatabaseCapability();
+        var fileCapability = GetFileHandlingCapability();
+        
         var context = $@"
 {_agentConfig.Agent.SystemPrompt}
 
@@ -148,9 +151,9 @@ AVAILABLE CAPABILITIES:
 {string.Join("\n", _agentConfig.Agent.Capabilities.Select(c => $"- {c.Name}: {c.Description}"))}
 
 AVAILABLE TOOLS:
-- Database Repositories: {string.Join(", ", _agentConfig.Database.Repositories)}
+- Database Repositories: {(dbCapability != null ? string.Join(", ", dbCapability.Repositories) : "None")}
 - File Handler: IExcelFileHandler for processing Excel/CSV files
-- Operations: {string.Join(", ", _agentConfig.Database.Operations)}
+- Operations: {(dbCapability != null ? string.Join(", ", dbCapability.Operations) : "None")}
 
 CONVERSATION RULES:
 {string.Join("\n", _agentConfig.Agent.ConversationRules.Select(r => $"- {r}"))}
@@ -382,10 +385,14 @@ When the user asks you to perform actions, execute them directly and provide cle
 
         foreach (var path in searchPaths.Where(Directory.Exists))
         {
-            foreach (var format in _agentConfig.FileHandling.SupportedFormats)
+            var fileCapability = GetFileHandlingCapability();
+            if (fileCapability != null)
             {
-                var pattern = $"*{format}";
-                files.AddRange(Directory.GetFiles(path, pattern));
+                foreach (var format in fileCapability.SupportedFormats)
+                {
+                    var pattern = $"*{format}";
+                    files.AddRange(Directory.GetFiles(path, pattern));
+                }
             }
         }
 
@@ -397,5 +404,53 @@ When the user asks you to perform actions, execute them directly and provide cle
         return _agentConfig.Agent.ErrorHandling.TryGetValue(errorType, out var message) 
             ? message 
             : "An unexpected error occurred. Please try again.";
+    }
+
+    /// <summary>
+    /// Get database capability configuration if enabled
+    /// </summary>
+    private DatabaseCapabilityConfiguration? GetDatabaseCapability()
+    {
+        var dbCapability = _agentConfig.Agent.Capabilities
+            .FirstOrDefault(c => c.Id == "database-access" && c.IsEnabled);
+        
+        if (dbCapability?.Configuration != null)
+        {
+            var dbConfig = System.Text.Json.JsonSerializer.Deserialize<DatabaseCapabilityConfiguration>(
+                System.Text.Json.JsonSerializer.Serialize(dbCapability.Configuration));
+            return dbConfig;
+        }
+        
+        // Fallback to default if not configured
+        return new DatabaseCapabilityConfiguration
+        {
+            Repositories = new List<string> { "PerfumeRepository", "BrandRepository", "ManufacturerRepository", "SupplierRepository" },
+            Operations = new List<string> { "Create", "Read", "Update", "Delete", "Search" }
+        };
+    }
+
+    /// <summary>
+    /// Get file handling capability configuration if enabled
+    /// </summary>
+    private FileHandlingCapabilityConfiguration? GetFileHandlingCapability()
+    {
+        var fileCapability = _agentConfig.Agent.Capabilities
+            .FirstOrDefault(c => c.Id == "file-processing" && c.IsEnabled);
+        
+        if (fileCapability?.Configuration != null)
+        {
+            var fileConfig = System.Text.Json.JsonSerializer.Deserialize<FileHandlingCapabilityConfiguration>(
+                System.Text.Json.JsonSerializer.Serialize(fileCapability.Configuration));
+            return fileConfig;
+        }
+        
+        // Fallback to default if not configured
+        return new FileHandlingCapabilityConfiguration
+        {
+            SupportedFormats = new List<string> { ".xlsx", ".xls", ".csv" },
+            InputDirectories = new List<string> { "Inputs" },
+            MaxFileSize = "10MB",
+            AllowedOperations = new List<string> { "Read", "Import", "Export" }
+        };
     }
 }
