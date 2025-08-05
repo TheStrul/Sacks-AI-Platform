@@ -47,6 +47,12 @@ This project follows the contract established in `PROJECT_CONTRACT.md`. Please a
 - Avoid overly complex solutions for simple problems
 - Don't implement features not explicitly requested
 
+### Development Mode
+- **DEVELOPMENT MODE**: No migrations or backward compatibility needed
+- Database schema changes can be made directly without migration considerations
+- Feel free to recreate/reset database as needed during development
+- Focus on rapid iteration and feature development over data preservation
+
 ### Project Structure
 - Create separate class library projects for each layer
 - Use proper project references and dependencies

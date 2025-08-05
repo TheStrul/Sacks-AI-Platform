@@ -25,10 +25,9 @@ public static class DatabaseSeeder
             // Load data from JSON file
             var seedData = await LoadSeedDataFromJsonAsync();
             
-            // Seed Manufacturers
+            // Seed Manufacturers first
             var manufacturers = seedData.Manufacturers.Select(m => new Manufacturer
             {
-                ManufacturerID = m.Id,
                 Name = m.Name,
                 Website = m.Website
             }).ToList();
@@ -36,14 +35,23 @@ public static class DatabaseSeeder
             await context.Manufacturers.AddRangeAsync(manufacturers);
             await context.SaveChangesAsync();
 
-            // Seed Brands
-            var brands = seedData.Brands.Select(b => new Brand
+            // Seed Brands - create them with proper manufacturer relationships
+            var brands = new List<Brand>();
+            for (int i = 0; i < seedData.Manufacturers.Count; i++)
             {
-                BrandID = b.Id,
-                Name = b.Name,
-                ManufacturerID = b.ManufacturerId,
-                CountryOfOrigin = Enum.Parse<Country>(b.CountryOfOrigin)
-            }).ToList();
+                var manufacturerData = seedData.Manufacturers[i];
+                var manufacturer = manufacturers[i]; // Same index since we added them in order
+
+                foreach (var brandData in manufacturerData.Brands)
+                {
+                    brands.Add(new Brand
+                    {
+                        Name = brandData.Name,
+                        ManufacturerID = manufacturer.ManufacturerID,
+                        CountryOfOrigin = Enum.Parse<Country>(brandData.CountryOfOrigin)
+                    });
+                }
+            }
 
             await context.Brands.AddRangeAsync(brands);
             await context.SaveChangesAsync();
@@ -77,7 +85,7 @@ public static class DatabaseSeeder
 
             var seedData = JsonSerializer.Deserialize<SeedData>(jsonContent, options);
             
-            if (seedData?.Manufacturers == null || seedData.Brands == null)
+            if (seedData?.Manufacturers == null)
             {
                 throw new InvalidOperationException("Invalid seed data format in JSON file");
             }
@@ -94,21 +102,18 @@ public static class DatabaseSeeder
     private class SeedData
     {
         public List<ManufacturerDto> Manufacturers { get; set; } = new();
-        public List<BrandDto> Brands { get; set; } = new();
     }
 
     private class ManufacturerDto
     {
-        public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Website { get; set; } = string.Empty;
+        public List<BrandDto> Brands { get; set; } = new();
     }
 
     private class BrandDto
     {
-        public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
-        public int ManufacturerId { get; set; }
         public string CountryOfOrigin { get; set; } = string.Empty;
     }
 }
