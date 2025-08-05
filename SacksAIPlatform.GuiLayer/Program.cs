@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
 using Serilog;
+using DotNetEnv;
 using SacksAIPlatform.DataLayer.Context;
 using SacksAIPlatform.DataLayer.Repositories.Interfaces;
 using SacksAIPlatform.DataLayer.Repositories.Implementations;
@@ -26,6 +27,18 @@ class Program
     
     static async Task Main(string[] args)
     {
+        // Load environment variables from .env file
+        try
+        {
+            Env.Load();
+            Console.WriteLine("✅ Environment variables loaded from .env file");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"⚠️  Could not load .env file: {ex.Message}");
+            Console.WriteLine("Continuing with system environment variables and appsettings.json");
+        }
+
         var builder = Host.CreateApplicationBuilder(args);
 
         // Add Serilog
