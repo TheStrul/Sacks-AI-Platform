@@ -1,4 +1,5 @@
 using SacksAIPlatform.DataLayer.Csv.Interfaces;
+using SacksAIPlatform.DataLayer.Csv.Models;
 using SacksAIPlatform.DataLayer.Entities;
 using SacksAIPlatform.DataLayer.Enums;
 using SacksAIPlatform.InfrastructuresLayer.Csv.Interfaces;
@@ -15,8 +16,11 @@ public class CsvPerfumeConverter : ICsvPerfumeConverter
         _csvFileReader = csvFileReader;
     }
 
-    public async Task<CsvConversionResult> ConvertCsvToPerfumesAsync(string csvFilePath, bool skipFirstRow = true)
+    public async Task<CsvConversionResult> ConvertCsvToPerfumesAsync(string csvFilePath, CsvConfiguration? configuration = null)
     {
+        configuration ??= CsvConfiguration.CreateDefaultConfiguration();
+        configuration.Validate();
+        
         var result = new CsvConversionResult();
         var perfumes = new List<Perfume>();
         var errors = new List<CsvValidationError>();
@@ -24,17 +28,23 @@ public class CsvPerfumeConverter : ICsvPerfumeConverter
         try
         {
             var lines = await _csvFileReader.ReadCsvFileAsync(csvFilePath);
-            var startIndex = skipFirstRow ? 1 : 0;
+            var endRow = configuration.EndAtRow == -1 ? lines.Length - 1 : Math.Min(configuration.EndAtRow, lines.Length - 1);
             
-            for (int i = startIndex; i < lines.Length; i++)
+            for (int i = configuration.StartFromRow; i <= endRow; i++)
             {
                 var line = lines[i];
                 var rowNumber = i + 1;
                 result.TotalRecordsProcessed++;
                 
+                // Skip inner titles if configured
+                if (configuration.HasInnerTitles && IsLikelyTitleRow(line))
+                {
+                    continue;
+                }
+                
                 try
                 {
-                    var perfume = ParseCsvLineToPerfume(line, rowNumber);
+                    var perfume = ParseCsvLineToPerfume(line, rowNumber, configuration);
                     if (perfume != null)
                     {
                         perfumes.Add(perfume);
@@ -63,53 +73,176 @@ public class CsvPerfumeConverter : ICsvPerfumeConverter
             throw new InvalidOperationException($"Failed to process CSV file: {ex.Message}", ex);
         }
     }
+
+    public async Task<CsvConversionResult> ConvertCsvToPerfumesAsync(string csvFilePath, bool skipFirstRow = true)
+    {
+        var configuration = CsvConfiguration.CreateDefaultConfiguration();
+        configuration.StartFromRow = skipFirstRow ? 1 : 0;
+        return await ConvertCsvToPerfumesAsync(csvFilePath, configuration);
+    }
     
-    private Perfume? ParseCsvLineToPerfume(string csvLine, int rowNumber)
+    private bool IsLikelyTitleRow(string csvLine)
+    {
+        // Simple heuristic to detect title rows
+        var fields = _csvFileReader.ParseCsvLine(csvLine);
+        
+        // If most fields contain common header words, it's likely a title row
+        var headerKeywords = new[] { "confirmed", "upc", "brand", "product", "name", "size", "type", "concentration", "gender", "country", "origin" };
+        var matchCount = fields.Count(field => 
+            headerKeywords.Any(keyword => 
+                field.ToLowerInvariant().Contains(keyword)));
+        
+        return matchCount >= 3; // If 3 or more fields match header keywords, consider it a title row
+    }
+    
+    private Perfume? ParseCsvLineToPerfume(string csvLine, int rowNumber, CsvConfiguration configuration)
     {
         // Split CSV line using the general CSV reader
         var fields = _csvFileReader.ParseCsvLine(csvLine);
         
-        if (fields.Length < 11) // Minimum required fields
+        if (fields.Length < configuration.MinimumColumns)
         {
-            throw new ArgumentException($"Insufficient fields in CSV line. Expected at least 11, got {fields.Length}");
-        }
-        
-        // CSV Structure: Confirmed,UPC,Brand,Product Name,Size,Type,Concentration,Gender,Country of Origin,Li (Free/None),,Total Products...
-        // Fields: 0=Confirmed, 1=UPC, 2=Brand, 3=Product Name, 4=Size, 5=Type, 6=Concentration, 7=Gender, 8=Country, 9=LiFree
-        
-        var upc = _csvFileReader.CleanField(fields[1]);
-        var brand = _csvFileReader.CleanField(fields[2]);
-        var productName = _csvFileReader.CleanField(fields[3]);
-        var size = _csvFileReader.CleanField(fields[4]);
-        var type = _csvFileReader.CleanField(fields[5]);
-        var concentration = _csvFileReader.CleanField(fields[6]);
-        var gender = _csvFileReader.CleanField(fields[7]);
-        var countryOfOrigin = _csvFileReader.CleanField(fields[8]);
-        var liFree = _csvFileReader.CleanField(fields[9]);
-        
-        // Skip invalid records
-        if (string.IsNullOrWhiteSpace(upc) || string.IsNullOrWhiteSpace(productName))
-        {
-            return null;
+            throw new ArgumentException($"Insufficient fields in CSV line. Expected at least {configuration.MinimumColumns}, got {fields.Length}");
         }
         
         var perfume = new Perfume
         {
-            PerfumeCode = upc, // Using UPC as unique code
-            Name = CleanProductName(productName),
-            Size = ParseSize(size),
-            Units = ParseUnits(size),
-            Concentration = ParseConcentration(concentration),
-            Type = ParseType(type),
-            Gender = ParseGender(gender),
-            CountryOfOrigin = CleanCountryName(countryOfOrigin),
-            LilFree = ParseLiFree(liFree),
-            OriginalSource = "ComprehensiveStockAi.csv",
-            Remarks = $"Brand: {brand}, Original Size: {size}, Original Type: {type}",
-            BrandID = 0 // Will need to be resolved against existing brands
+            OriginalSource = configuration.FormatName
         };
         
+        // Process each field according to configuration
+        for (int columnIndex = 0; columnIndex < fields.Length; columnIndex++)
+        {
+            if (configuration.IsColumnIgnored(columnIndex))
+                continue;
+                
+            var propertyType = configuration.GetPropertyType(columnIndex);
+            var fieldValue = _csvFileReader.CleanField(fields[columnIndex]);
+            
+            MapFieldToPerfume(perfume, propertyType, fieldValue, rowNumber);
+        }
+        
+        // Validate required fields
+        if (string.IsNullOrWhiteSpace(perfume.PerfumeCode) || string.IsNullOrWhiteSpace(perfume.Name))
+        {
+            return null; // Skip invalid records
+        }
+        
         return perfume;
+    }
+    
+    private void MapFieldToPerfume(Perfume perfume, PropertyType propertyType, string fieldValue, int rowNumber)
+    {
+        try
+        {
+            switch (propertyType)
+            {
+                case PropertyType.PerfumeCode:
+                case PropertyType.UPC:
+                    if (!string.IsNullOrWhiteSpace(fieldValue))
+                        perfume.PerfumeCode = fieldValue;
+                    break;
+                    
+                case PropertyType.Name:
+                case PropertyType.ProductName:
+                    if (!string.IsNullOrWhiteSpace(fieldValue))
+                        perfume.Name = CleanProductName(fieldValue);
+                    break;
+                    
+                case PropertyType.BrandID:
+                    if (int.TryParse(fieldValue, out var brandId))
+                        perfume.BrandID = brandId;
+                    break;
+                    
+                case PropertyType.Brand:
+                    // Store brand name in remarks, will need to resolve to BrandID later
+                    if (!string.IsNullOrWhiteSpace(fieldValue))
+                        perfume.Remarks = $"Brand: {fieldValue}, {perfume.Remarks}".TrimEnd(", ".ToCharArray());
+                    break;
+                    
+                case PropertyType.Concentration:
+                    perfume.Concentration = ParseConcentration(fieldValue);
+                    break;
+                    
+                case PropertyType.Type:
+                    perfume.Type = ParseType(fieldValue);
+                    break;
+                    
+                case PropertyType.Gender:
+                    perfume.Gender = ParseGender(fieldValue);
+                    break;
+                    
+                case PropertyType.Size:
+                    if (!string.IsNullOrWhiteSpace(fieldValue))
+                        perfume.Size = ParseSize(fieldValue);
+                    break;
+                    
+                case PropertyType.SizeAndUnits:
+                    if (!string.IsNullOrWhiteSpace(fieldValue))
+                    {
+                        perfume.Size = ParseSize(fieldValue);
+                        perfume.Units = ParseUnits(fieldValue);
+                    }
+                    break;
+                    
+                case PropertyType.Units:
+                    perfume.Units = ParseUnitsFromText(fieldValue);
+                    break;
+                    
+                case PropertyType.LilFree:
+                case PropertyType.LiFree:
+                    perfume.LilFree = ParseLiFree(fieldValue);
+                    break;
+                    
+                case PropertyType.CountryOfOrigin:
+                case PropertyType.Country:
+                    if (!string.IsNullOrWhiteSpace(fieldValue))
+                        perfume.CountryOfOrigin = CleanCountryName(fieldValue);
+                    break;
+                    
+                case PropertyType.OriginalSource:
+                case PropertyType.Source:
+                    if (!string.IsNullOrWhiteSpace(fieldValue))
+                        perfume.OriginalSource = fieldValue;
+                    break;
+                    
+                case PropertyType.Remarks:
+                case PropertyType.Notes:
+                    if (!string.IsNullOrWhiteSpace(fieldValue))
+                        perfume.Remarks = $"{perfume.Remarks}, {fieldValue}".TrimStart(", ".ToCharArray());
+                    break;
+                    
+                case PropertyType.Confirmed:
+                case PropertyType.TotalProducts:
+                case PropertyType.Ignore:
+                    // These fields are not mapped to Perfume properties
+                    break;
+                    
+                default:
+                    // Log unknown property type but don't fail
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new ArgumentException($"Failed to map field '{fieldValue}' to property '{propertyType}' at row {rowNumber}: {ex.Message}");
+        }
+    }
+    
+    private Units ParseUnitsFromText(string unitsField)
+    {
+        if (string.IsNullOrWhiteSpace(unitsField))
+            return Units.ml;
+            
+        var lower = unitsField.ToLowerInvariant();
+        
+        return lower switch
+        {
+            "oz" or "fl oz" or "fluid ounce" => Units.oz,
+            "ml" or "milliliter" => Units.ml,
+            "g" or "gram" or "grams" => Units.g,
+            _ => Units.ml
+        };
     }
     
     private string CleanProductName(string productName)

@@ -1,16 +1,25 @@
 using SacksAIPlatform.DataLayer.Entities;
+using SacksAIPlatform.DataLayer.Csv.Models;
 
 namespace SacksAIPlatform.DataLayer.Csv.Interfaces;
 
 public interface ICsvPerfumeConverter
 {
     /// <summary>
-    /// Converts CSV file to a list of Perfume entities
+    /// Converts CSV file to a list of Perfume entities using flexible configuration
+    /// </summary>
+    /// <param name="csvFilePath">Path to the CSV file</param>
+    /// <param name="configuration">CSV parsing configuration, null uses default</param>
+    /// <returns>List of converted Perfume entities with validation results</returns>
+    Task<CsvConversionResult> ConvertCsvToPerfumesAsync(string csvFilePath, CsvConfiguration? configuration = null);
+    
+    /// <summary>
+    /// Converts CSV file to a list of Perfume entities (legacy method)
     /// </summary>
     /// <param name="csvFilePath">Path to the CSV file</param>
     /// <param name="skipFirstRow">Whether to skip the first row (headers)</param>
     /// <returns>List of converted Perfume entities with validation results</returns>
-    Task<CsvConversionResult> ConvertCsvToPerfumesAsync(string csvFilePath, bool skipFirstRow = true);
+    Task<CsvConversionResult> ConvertCsvToPerfumesAsync(string csvFilePath, bool skipFirstRow);
 }
 
 public class CsvConversionResult

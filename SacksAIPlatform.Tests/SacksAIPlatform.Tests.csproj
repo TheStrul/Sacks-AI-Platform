@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SacksAIPlatform.InfrastructuresLayer\SacksAIPlatform.InfrastructuresLayer.csproj" />
+    <ProjectReference Include="..\SacksAIPlatform.DataLayer\SacksAIPlatform.DataLayer.csproj" />
   </ItemGroup>
 
   <ItemGroup>
