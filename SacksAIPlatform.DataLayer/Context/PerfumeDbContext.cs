@@ -23,7 +23,6 @@ public class PerfumeDbContext : DbContext
         {
             entity.HasKey(e => e.ManufacturerID);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
-            entity.Property(e => e.Country).HasMaxLength(100);
             entity.Property(e => e.Website).HasMaxLength(500);
         });
 
@@ -32,6 +31,9 @@ public class PerfumeDbContext : DbContext
         {
             entity.HasKey(e => e.BrandID);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.CountryOfOrigin)
+                  .HasConversion<string>()
+                  .IsRequired();
             
             entity.HasOne(e => e.Manufacturer)
                   .WithMany(m => m.Brands)

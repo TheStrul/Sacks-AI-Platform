@@ -6,7 +6,6 @@ namespace SacksAIPlatform.DataLayer.Repositories.Interfaces;
 public interface IManufacturerRepository : IRepository<Manufacturer>
 {
     Task<Manufacturer?> GetByNameAsync(string name);
-    Task<IEnumerable<Manufacturer>> GetByCountryAsync(string country);
 }
 
 public interface IBrandRepository : IRepository<Brand>

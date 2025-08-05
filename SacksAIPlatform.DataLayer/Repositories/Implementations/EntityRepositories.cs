@@ -17,11 +17,6 @@ public class ManufacturerRepository : Repository<Manufacturer>, IManufacturerRep
         return await _dbSet.FirstOrDefaultAsync(m => m.Name == name);
     }
 
-    public async Task<IEnumerable<Manufacturer>> GetByCountryAsync(string country)
-    {
-        return await _dbSet.Where(m => m.Country == country).ToListAsync();
-    }
-
     public override async Task<IEnumerable<Manufacturer>> GetAllAsync()
     {
         return await _dbSet.Include(m => m.Brands).ToListAsync();
