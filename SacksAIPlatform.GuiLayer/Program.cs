@@ -14,10 +14,8 @@ using SacksAIPlatform.InfrastructuresLayer.AI.Interfaces;
 using SacksAIPlatform.GuiLayer.Chat;
 using SacksAIPlatform.DataLayer.Csv.Interfaces;
 using SacksAIPlatform.DataLayer.Csv.Implementations;
-using SacksAIPlatform.InfrastructuresLayer.Excel.Interfaces;
-using SacksAIPlatform.InfrastructuresLayer.Excel.Implementations;
-using SacksAIPlatform.InfrastructuresLayer.Csv.Interfaces;
-using SacksAIPlatform.InfrastructuresLayer.Csv.Implementations;
+using SacksAIPlatform.InfrastructuresLayer.FileProcessing.Interfaces;
+using SacksAIPlatform.InfrastructuresLayer.FileProcessing.Implementations;
 
 namespace SacksAIPlatform.GuiLayer;
 
@@ -77,7 +75,7 @@ class Program
         builder.Services.AddScoped<PerfumeBusinessService>();
         builder.Services.AddScoped<ProductMLPipeline>();
         builder.Services.AddScoped<PerfumeImportService>();
-        builder.Services.AddScoped<ICsvFileReader, CsvFileReader>();
+        builder.Services.AddScoped<IFileDataReader, FileDataReader>();
         builder.Services.AddScoped<ICsvPerfumeConverter, CsvPerfumeConverter>();
 
         // Register AI services - Infrastructure layer AI with business service wrapper
@@ -85,9 +83,6 @@ class Program
         builder.Services.AddScoped<IConversationalAgent, GenericLLMAgent>();
         builder.Services.AddScoped<PerfumeInventoryAIService>();
         builder.Services.AddScoped<ChatInterface>();
-        
-        // Register Excel file handler
-        builder.Services.AddScoped<IExcelFileHandler, ExcelFileHandler>();
 
         var app = builder.Build();
 

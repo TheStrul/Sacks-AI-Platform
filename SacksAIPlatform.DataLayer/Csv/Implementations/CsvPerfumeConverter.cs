@@ -2,18 +2,18 @@ using SacksAIPlatform.DataLayer.Csv.Interfaces;
 using SacksAIPlatform.DataLayer.Csv.Models;
 using SacksAIPlatform.DataLayer.Entities;
 using SacksAIPlatform.DataLayer.Enums;
-using SacksAIPlatform.InfrastructuresLayer.Csv.Interfaces;
+using SacksAIPlatform.InfrastructuresLayer.FileProcessing.Interfaces;
 using System.Globalization;
 
 namespace SacksAIPlatform.DataLayer.Csv.Implementations;
 
 public class CsvPerfumeConverter : ICsvPerfumeConverter
 {
-    private readonly ICsvFileReader _csvFileReader;
+    private readonly IFileDataReader _fileDataReader;
 
-    public CsvPerfumeConverter(ICsvFileReader csvFileReader)
+    public CsvPerfumeConverter(IFileDataReader fileDataReader)
     {
-        _csvFileReader = csvFileReader;
+        _fileDataReader = fileDataReader;
     }
 
     public async Task<CsvConversionResult> ConvertCsvToPerfumesAsync(string csvFilePath, CsvConfiguration? configuration = null)
@@ -27,24 +27,23 @@ public class CsvPerfumeConverter : ICsvPerfumeConverter
         
         try
         {
-            var lines = await _csvFileReader.ReadCsvFileAsync(csvFilePath);
-            var endRow = configuration.EndAtRow == -1 ? lines.Length - 1 : Math.Min(configuration.EndAtRow, lines.Length - 1);
+            var fileData = await _fileDataReader.ReadFileAsync(csvFilePath);
+            var endRow = configuration.EndAtRow == -1 ? fileData.RowCount - 1 : Math.Min(configuration.EndAtRow, fileData.RowCount - 1);
             
             for (int i = configuration.StartFromRow; i <= endRow; i++)
             {
-                var line = lines[i];
                 var rowNumber = i + 1;
                 result.TotalRecordsProcessed++;
                 
                 // Skip inner titles if configured
-                if (configuration.HasInnerTitles && IsLikelyTitleRow(line))
+                if (configuration.HasInnerTitles && IsLikelyTitleRow(fileData, i))
                 {
                     continue;
                 }
                 
                 try
                 {
-                    var perfume = ParseCsvLineToPerfume(line, rowNumber, configuration);
+                    var perfume = ParseRowToPerfume(fileData, i, rowNumber, configuration);
                     if (perfume != null)
                     {
                         perfumes.Add(perfume);
@@ -52,13 +51,14 @@ public class CsvPerfumeConverter : ICsvPerfumeConverter
                 }
                 catch (Exception ex)
                 {
+                    var rowData = string.Join(",", fileData.GetRow(i));
                     errors.Add(new CsvValidationError
                     {
                         RowNumber = rowNumber,
                         Field = "General",
-                        Value = line,
+                        Value = rowData,
                         ErrorMessage = ex.Message,
-                        RawCsvLine = line
+                        RawCsvLine = rowData
                     });
                 }
             }
@@ -81,24 +81,24 @@ public class CsvPerfumeConverter : ICsvPerfumeConverter
         return await ConvertCsvToPerfumesAsync(csvFilePath, configuration);
     }
     
-    private bool IsLikelyTitleRow(string csvLine)
+    private bool IsLikelyTitleRow(SacksAIPlatform.InfrastructuresLayer.FileProcessing.Models.FileData fileData, int rowIndex)
     {
         // Simple heuristic to detect title rows
-        var fields = _csvFileReader.ParseCsvLine(csvLine);
+        var fields = fileData.GetRow(rowIndex);
         
         // If most fields contain common header words, it's likely a title row
         var headerKeywords = new[] { "confirmed", "upc", "brand", "product", "name", "size", "type", "concentration", "gender", "country", "origin" };
         var matchCount = fields.Count(field => 
             headerKeywords.Any(keyword => 
-                field.ToLowerInvariant().Contains(keyword)));
+                field?.ToLowerInvariant().Contains(keyword) == true));
         
         return matchCount >= 3; // If 3 or more fields match header keywords, consider it a title row
     }
     
-    private Perfume? ParseCsvLineToPerfume(string csvLine, int rowNumber, CsvConfiguration configuration)
+    private Perfume? ParseRowToPerfume(SacksAIPlatform.InfrastructuresLayer.FileProcessing.Models.FileData fileData, int rowIndex, int rowNumber, CsvConfiguration configuration)
     {
-        // Split CSV line using the general CSV reader
-        var fields = _csvFileReader.ParseCsvLine(csvLine);
+        // Get row data from FileData
+        var fields = fileData.GetRow(rowIndex);
         
         if (fields.Length < configuration.MinimumColumns)
         {
@@ -117,7 +117,7 @@ public class CsvPerfumeConverter : ICsvPerfumeConverter
                 continue;
                 
             var propertyType = configuration.GetPropertyType(columnIndex);
-            var fieldValue = _csvFileReader.CleanField(fields[columnIndex]);
+            var fieldValue = CleanField(fields[columnIndex]);
             
             MapFieldToPerfume(perfume, propertyType, fieldValue, rowNumber);
         }
@@ -348,5 +348,23 @@ public class CsvPerfumeConverter : ICsvPerfumeConverter
             return "";
             
         return countryField.Trim();
+    }
+
+    /// <summary>
+    /// Cleans a CSV field by removing quotes and trimming whitespace
+    /// </summary>
+    private string CleanField(string? field)
+    {
+        if (string.IsNullOrEmpty(field))
+        {
+            return string.Empty;
+        }
+
+        // First trim whitespace, then remove surrounding quotes, then handle escaped quotes
+        return field
+            .Trim() // Remove leading/trailing whitespace
+            .Trim('"') // Remove surrounding quotes
+            .Replace("\"\"", "\"") // Handle escaped quotes (convert "" to ")
+            .Trim(); // Final trim after processing
     }
 }

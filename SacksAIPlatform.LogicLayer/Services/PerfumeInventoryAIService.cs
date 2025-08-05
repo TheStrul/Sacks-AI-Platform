@@ -1,7 +1,7 @@
 using SacksAIPlatform.InfrastructuresLayer.AI.Models;
 using SacksAIPlatform.InfrastructuresLayer.AI.Interfaces;
 using SacksAIPlatform.DataLayer.Repositories.Interfaces;
-using SacksAIPlatform.InfrastructuresLayer.Excel.Interfaces;
+using SacksAIPlatform.InfrastructuresLayer.FileProcessing.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace SacksAIPlatform.LogicLayer.Services;
@@ -21,7 +21,7 @@ public class PerfumeInventoryAIService
     private readonly IManufacturerRepository _manufacturerRepository;
     private readonly ISupplierRepository _supplierRepository;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IExcelFileHandler _excelHandler;
+    private readonly IFileDataReader _fileHandler;
 
     public PerfumeInventoryAIService(
         ILogger<PerfumeInventoryAIService> logger,
@@ -31,7 +31,7 @@ public class PerfumeInventoryAIService
         IManufacturerRepository manufacturerRepository,
         ISupplierRepository supplierRepository,
         IUnitOfWork unitOfWork,
-        IExcelFileHandler excelHandler)
+        IFileDataReader fileHandler)
     {
         _logger = logger;
         _aiAgent = aiAgent;
@@ -40,7 +40,7 @@ public class PerfumeInventoryAIService
         _manufacturerRepository = manufacturerRepository;
         _supplierRepository = supplierRepository;
         _unitOfWork = unitOfWork;
-        _excelHandler = excelHandler;
+        _fileHandler = fileHandler;
         
         _logger.LogInformation("Perfume Inventory AI Service initialized with business capabilities");
     }

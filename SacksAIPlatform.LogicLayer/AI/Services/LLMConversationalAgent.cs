@@ -1,7 +1,7 @@
 using SacksAIPlatform.InfrastructuresLayer.AI.Models;
 using SacksAIPlatform.InfrastructuresLayer.AI.Interfaces;
 using SacksAIPlatform.DataLayer.Repositories.Interfaces;
-using SacksAIPlatform.InfrastructuresLayer.Excel.Interfaces;
+using SacksAIPlatform.InfrastructuresLayer.FileProcessing.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using System.Text.Json;
@@ -26,7 +26,7 @@ public class LLMConversationalAgent : IConversationalAgent
     private readonly IUnitOfWork _unitOfWork;
     
     // File processing
-    private readonly IExcelFileHandler _excelHandler;
+    private readonly IFileDataReader _fileHandler;
     
     // Agent configuration
     private readonly AgentConfiguration _agentConfig;
@@ -40,7 +40,7 @@ public class LLMConversationalAgent : IConversationalAgent
         IManufacturerRepository manufacturerRepository,
         ISupplierRepository supplierRepository,
         IUnitOfWork unitOfWork,
-        IExcelFileHandler excelHandler)
+        IFileDataReader fileHandler)
     {
         _logger = logger;
         _configuration = configuration;
@@ -50,7 +50,7 @@ public class LLMConversationalAgent : IConversationalAgent
         _manufacturerRepository = manufacturerRepository;
         _supplierRepository = supplierRepository;
         _unitOfWork = unitOfWork;
-        _excelHandler = excelHandler;
+        _fileHandler = fileHandler;
         
         // Load agent configuration from JSON
         _agentConfig = LoadAgentConfiguration();
@@ -152,7 +152,7 @@ AVAILABLE CAPABILITIES:
 
 AVAILABLE TOOLS:
 - Database Repositories: {(dbCapability != null ? string.Join(", ", dbCapability.Repositories) : "None")}
-- File Handler: IExcelFileHandler for processing Excel/CSV files
+- File Handler: IFileDataReader for processing Excel/CSV files
 - Operations: {(dbCapability != null ? string.Join(", ", dbCapability.Operations) : "None")}
 
 CONVERSATION RULES:
@@ -298,9 +298,9 @@ When the user asks you to perform actions, execute them directly and provide cle
             };
         }
 
-        // Use IExcelFileHandler to process files
+        // Use IFileDataReader to process files
         var firstFile = files.First();
-        var fileExists = await _excelHandler.FileExistsAsync(firstFile);
+        var fileExists = await _fileHandler.FileExistsAsync(firstFile);
         
         if (!fileExists)
         {
@@ -313,15 +313,16 @@ When the user asks you to perform actions, execute them directly and provide cle
 
         try
         {
-            var worksheetNames = await _excelHandler.GetWorksheetNamesAsync(firstFile);
+            // Read the file to get basic information
+            var fileData = await _fileHandler.ReadFileAsync(firstFile);
             
             return new AgentResponse
             {
-                Message = $"File analysis complete. Found {worksheetNames.Count} worksheets: {string.Join(", ", worksheetNames)}",
+                Message = $"File analysis complete. Found {fileData.ColumnCount} columns and {fileData.RowCount} rows. Headers: {string.Join(", ", fileData.Headers.Take(5))}",
                 Type = AgentResponseType.DataPresentation,
                 Data = new Dictionary<string, object>
                 {
-                    { "Worksheets", worksheetNames },
+                    { "FileData", fileData },
                     { "FilePath", firstFile }
                 }
             };
