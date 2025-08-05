@@ -13,6 +13,7 @@ public class SacksDbContext : DbContext
     public DbSet<Brand> Brands { get; set; }
     public DbSet<Supplier> Suppliers { get; set; }
     public DbSet<Product> Producs { get; set; }
+    public DbSet<FileConfigurationHolder> FileConfigurationHolders { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -49,6 +50,24 @@ public class SacksDbContext : DbContext
             entity.Property(e => e.Type).HasMaxLength(100);
             entity.Property(e => e.Country).HasMaxLength(100);
             entity.Property(e => e.ContactInfo).HasMaxLength(500);
+        });
+
+        // Configure FileConfigurationHolder
+        modelBuilder.Entity<FileConfigurationHolder>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.FileNamePattern).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.FileExtension).IsRequired().HasMaxLength(10);
+            entity.Property(e => e.ConfigurationJson).IsRequired().HasColumnType("nvarchar(max)");
+            entity.Property(e => e.Remarks).HasMaxLength(500);
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.UpdatedAt).IsRequired();
+            
+            entity.HasOne(e => e.Supplier)
+                  .WithMany(s => s.FileConfigurations)
+                  .HasForeignKey(e => e.SupplierId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Configure Product
