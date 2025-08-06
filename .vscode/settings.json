@@ -1,0 +1,10 @@
+{
+    "github.copilot.chat.pullRequestDescriptionGeneration.instructions": [
+        ".github/instructions/copilot-instructions.md"
+    ],
+    "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+    "github.copilot.chat.codeGeneration.instructions": [
+        ".github/instructions/copilot-instructions.md"
+    ],
+    "github.copilot.chat.agent.thinkingTool": true,
+}
