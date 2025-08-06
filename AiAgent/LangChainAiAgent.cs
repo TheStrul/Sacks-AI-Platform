@@ -23,6 +23,7 @@ public class LangChainAiAgent
     private readonly OpenAiLatestFastChatModel _chatModel;
     private readonly Dictionary<string, object> _tools;
     private readonly List<string> _conversationHistory;
+    private readonly string _availableToolsDescription; // Cache tool descriptions
 
     /// <summary>
     /// Initialize the LangChain AI Agent with BasicConfig
@@ -50,6 +51,9 @@ public class LangChainAiAgent
 
         // Add tools to the agent based on configuration
         InitializeTools(loggerFactory);
+
+        // Build tool descriptions once during initialization
+        _availableToolsDescription = BuildToolDescriptions();
 
         _logger.LogInformation("LangChain AI Agent '{AgentName}' initialized successfully with {ToolCount} tools", _config.Agent.Name, _tools.Count);
     }
@@ -112,6 +116,57 @@ public class LangChainAiAgent
     }
 
     /// <summary>
+    /// Build comprehensive tool descriptions from all available tools
+    /// Uses the Description property from each tool as single source of truth
+    /// </summary>
+    private string BuildToolDescriptions()
+    {
+        var descriptions = new List<string>();
+
+        foreach (var toolEntry in _tools)
+        {
+            var toolName = toolEntry.Key;
+            var tool = toolEntry.Value;
+
+            string description;
+            string inputFormat = "";
+
+            // Extract description and input format from tool
+            if (tool is FileSystemAgentTool fsaTool)
+            {
+                description = fsaTool.Description;
+                inputFormat = "Requires JSON input like {\"operation\": \"list\", \"path\": \"C:\\\\temp\"}";
+            }
+            else if (tool is WebSearchAgentTool wsTool)
+            {
+                description = wsTool.Description;
+                inputFormat = "Requires plain text search query";
+            }
+            else if (tool is CalculatorAgentTool calcTool)
+            {
+                description = calcTool.Description;
+                inputFormat = "Requires mathematical expression like \"2 + 2\"";
+            }
+            else if (tool is AgentTool agentTool)
+            {
+                // Handle external tools that inherit from AgentTool
+                description = agentTool.Description;
+                inputFormat = "Check tool documentation for input format";
+            }
+            else
+            {
+                // Fallback for unknown tool types
+                description = $"External tool: {toolName}";
+                inputFormat = "Check tool documentation for input format";
+            }
+
+            descriptions.Add($"- {toolName}: {description}. {inputFormat}");
+        }
+
+        return string.Join("\n", descriptions);
+    }
+
+    /// <summary>
     /// Process a user message and return the agent's response
     /// </summary>
     public async Task<string> ProcessMessageAsync(string message, CancellationToken cancellationToken = default)
@@ -163,24 +218,11 @@ public class LangChainAiAgent
 
     private async Task<ToolRequest> AnalyzeForToolUsage(string message, CancellationToken cancellationToken)
     {
-        // Build available tools list based on what's enabled
-        var availableToolsDescriptions = new List<string>();
-
-        if (_config.BasicToolSettings.EnableFileSystem)
-            availableToolsDescriptions.Add("- file_system: Read, write, list, delete files and directories. Requires JSON input like {\"operation\": \"list\", \"path\": \"C:\\\\temp\"}");
-
-        if (_config.BasicToolSettings.EnableWebSearch)
-            availableToolsDescriptions.Add("- web_search: Search the web using DuckDuckGo. Requires plain text search query");
-
-        if (_config.BasicToolSettings.EnableCalculator)
-            availableToolsDescriptions.Add("- calculator: Perform mathematical calculations. Requires mathematical expression like \"2 + 2\"");
-
-        var availableToolsText = string.Join("\n", availableToolsDescriptions);
-
+        // Use pre-built tool descriptions instead of recreating them
         var analysisPrompt = $@"Analyze the following user message and determine if it requires using one of the available tools.
 
 Available tools:
-{availableToolsText}
+{_availableToolsDescription}
 
 User message: ""{message}""
 
@@ -195,7 +237,9 @@ Respond with JSON in this format:
 Examples:
 - For ""list files"": {{""requires_tool"": true, ""tool_name"": ""file_system"", ""tool_input"": ""{{\\""operation\\"":\\""list\\""}}""}}
 - For ""search for AI news"": {{""requires_tool"": true, ""tool_name"": ""web_search"", ""tool_input"": ""AI news""}}
-- For ""calculate 2+2"": {{""requires_tool"": true, ""tool_name"": ""calculator"", ""tool_input"": ""2+2""}}";
+- For ""calculate 2+2"": {{""requires_tool"": true, ""tool_name"": ""calculator"", ""tool_input"": ""2+2""}}
+
+Note: Analyze the user's intent and match it to the most appropriate tool based on the tool descriptions above.";
 
         var chain = Set(analysisPrompt, "text") | LLM(_chatModel);
         var result = await chain.RunAsync("text", cancellationToken: cancellationToken);
@@ -249,14 +293,18 @@ Examples:
 
             var tool = _tools[toolName];
 
-            // Cast to the appropriate tool type and execute
-            string result = toolName switch
+            // Execute tool dynamically based on its type
+            string result;
+            if (tool is AgentTool agentTool)
             {
-                "file_system" => await ((FileSystemAgentTool)tool).ToolTask(toolInput, cancellationToken),
-                "web_search" => await ((WebSearchAgentTool)tool).ToolTask(toolInput, cancellationToken),
-                "calculator" => await ((CalculatorAgentTool)tool).ToolTask(toolInput, cancellationToken),
-                _ => $"Error: Unknown tool '{toolName}'"
-            };
+                // All tools (built-in and external) inherit from AgentTool
+                result = await agentTool.ToolTask(toolInput, cancellationToken);
+            }
+            else
+            {
+                // Fallback for non-AgentTool types (shouldn't happen in our architecture)
+                result = $"Error: Tool '{toolName}' does not implement AgentTool interface";
+            }
 
             _logger.LogInformation("Tool {ToolName} executed successfully", toolName);
             return result;
@@ -323,20 +371,23 @@ Please provide a helpful, natural response.";
     }
 
     /// <summary>
-    /// Get available tool information
+    /// Get available tool information from actual tool instances
     /// </summary>
     public List<(string Name, string Description)> GetAvailableTools()
     {
         var tools = new List<(string, string)>();
 
-        if (_config.BasicToolSettings.EnableFileSystem)
-            tools.Add(("file_system", "Read, write, list, delete files and directories"));
+        foreach (var toolEntry in _tools)
+        {
+            var toolName = toolEntry.Key;
+            var tool = toolEntry.Value;
 
-        if (_config.BasicToolSettings.EnableWebSearch)
-            tools.Add(("web_search", "Search the web using DuckDuckGo"));
+            string description = tool is AgentTool agentTool 
+                ? agentTool.Description 
+                : $"External tool: {toolName}";
 
-        if (_config.BasicToolSettings.EnableCalculator)
-            tools.Add(("calculator", "Perform mathematical calculations"));
+            tools.Add((toolName, description));
+        }
 
         return tools;
     }
