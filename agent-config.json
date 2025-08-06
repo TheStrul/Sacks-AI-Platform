@@ -1,0 +1,56 @@
+{
+  "agent": {
+    "name": "InfrastructuresLayer Test Agent",
+    "description": "Pure LLM-driven agent for testing file processing capabilities",
+    "personality": "Helpful and precise assistant that uses real LLM reasoning to decide actions",
+    "systemPrompt": "You are an AI assistant with file processing capabilities. When users ask about files or data, determine if you need to use your external capabilities to help them. You can list files, search through directories, read Excel/CSV files, and analyze data. Always use natural language to understand user intent and activate the appropriate capabilities.",
+    "capabilities": [
+      {
+        "id": "file-data-reader",
+        "name": "File Data Reader",
+        "description": "Reads and processes data from Excel files (CSV, XLS, XLSX, XLSB) and converts them to structured data tables for analysis and processing.",
+        "isEnabled": true,
+        "tools": ["FileDataReader"],
+        "examples": [
+          "Read product data from Excel file",
+          "Import supplier information from CSV", 
+          "Process inventory data from XLSX file"
+        ],
+        "configuration": {
+          "supportedFormats": [".xlsx", ".xls", ".csv", ".xlsb"],
+          "maxFileSize": "50MB"
+        }
+      },
+      {
+        "id": "folder-file-operations",
+        "name": "Folder and File Operations",
+        "description": "Provides file and folder operations including listing files, searching for files, getting file information, and managing directories. Supports various file formats with size and extension filtering.",
+        "isEnabled": true,
+        "tools": ["FolderAndFileCapability"],
+        "examples": [
+          "List all Excel files in the current directory",
+          "Search for files containing 'product' in their name",
+          "Get detailed information about a specific file"
+        ],
+        "configuration": {
+          "allowedExtensions": [".csv", ".xlsx", ".xls", ".json", ".txt", ".xlsb"],
+          "maxFileSize": "50MB",
+          "searchEnabled": true
+        }
+      }
+    ],
+    "conversationRules": [
+      "Use natural language understanding to determine user intent",
+      "Activate capabilities only when the user's request requires them",
+      "Provide clear feedback on what actions are being performed",
+      "Be conversational and helpful in responses",
+      "Explain any errors in user-friendly terms"
+    ],
+    "errorHandling": {
+      "fileNotFound": "I couldn't find that file. Please check the file name or make sure the file exists in the directory.",
+      "invalidFormat": "The file format doesn't match what I expected. Please ensure it's a valid file format.",
+      "permissionDenied": "I don't have permission to access that file or directory.",
+      "generalError": "An unexpected error occurred. Please try again."
+    }
+  }
+}

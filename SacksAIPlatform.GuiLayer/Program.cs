@@ -98,8 +98,7 @@ class Program
         builder.Services.AddScoped<FolderAndFileCapability>();
 
         // Register AI services - Infrastructure layer AI with business service wrapper
-        builder.Services.AddScoped<IIntentRecognitionService, OpenAIIntentRecognitionService>();
-        builder.Services.AddScoped<IConversationalAgent, GenericLLMAgent>();
+        builder.Services.AddScoped<IConversationalAgent, AiAgent>();
         builder.Services.AddScoped<ProductsInventoryAIService>();
         builder.Services.AddScoped<ChatInterface>();
 
