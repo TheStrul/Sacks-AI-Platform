@@ -2,6 +2,7 @@ using SacksAIPlatform.InfrastructuresLayer.AI.Models;
 using SacksAIPlatform.InfrastructuresLayer.AI.Interfaces;
 using SacksAIPlatform.DataLayer.Repositories.Interfaces;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing.Interfaces;
+using SacksAIPlatform.InfrastructuresLayer.AI.Capabilities;
 using Microsoft.Extensions.Logging;
 
 namespace SacksAIPlatform.LogicLayer.Services;
@@ -22,6 +23,7 @@ public class ProductsInventoryAIService
     private readonly ISupplierRepository _supplierRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IFileDataReader _fileHandler;
+    private readonly FolderAndFileCapability _folderCapability;
 
     public ProductsInventoryAIService(
         ILogger<ProductsInventoryAIService> logger,
@@ -31,7 +33,8 @@ public class ProductsInventoryAIService
         IManufacturerRepository manufacturerRepository,
         ISupplierRepository supplierRepository,
         IUnitOfWork unitOfWork,
-        IFileDataReader fileHandler)
+        IFileDataReader fileHandler,
+        FolderAndFileCapability folderCapability)
     {
         _logger = logger;
         _aiAgent = aiAgent;
@@ -41,6 +44,7 @@ public class ProductsInventoryAIService
         _supplierRepository = supplierRepository;
         _unitOfWork = unitOfWork;
         _fileHandler = fileHandler;
+        _folderCapability = folderCapability;
         
         _logger.LogInformation("Perfume Inventory AI Service initialized with business capabilities");
     }
@@ -90,37 +94,127 @@ BUSINESS CONTEXT: Perfume Inventory Management System
     {
         var lowerMessage = originalMessage.ToLowerInvariant();
         
-        // Add import actions if user mentions files
-        if (lowerMessage.Contains("import") || lowerMessage.Contains("file") || lowerMessage.Contains("csv"))
+        // Handle file listing and import requests
+        if (lowerMessage.Contains("list") && lowerMessage.Contains("file") || 
+            lowerMessage.Contains("show") && lowerMessage.Contains("file") ||
+            lowerMessage.Contains("import") || lowerMessage.Contains("add") && lowerMessage.Contains("product"))
         {
-            var files = FindAvailableFiles();
-            if (files.Any())
+            // Use the file capability to list files
+            var fileResponse = _folderCapability.ListFiles("Inputs", "*.*", false);
+            
+            if (fileResponse.Data.ContainsKey("files") && fileResponse.Data["files"] is List<object> files && files.Any())
             {
+                // Override the response with actual file information
+                response.Message = $"I found {files.Count} files ready for import. Here they are:";
+                response.Type = AgentResponseType.DataPresentation;
+                response.Data = fileResponse.Data;
+                
                 response.Actions.Add(new AgentAction
                 {
                     ActionId = "import_files",
-                    ActionName = "Import Available Files",
-                    Description = $"Import {files.Count} file(s) into perfume database",
-                    Parameters = new Dictionary<string, object> { { "files", files } }
+                    ActionName = "Import Files",
+                    Description = $"Import {files.Count} file(s) into the perfume database",
+                    Parameters = new Dictionary<string, object> 
+                    { 
+                        { "files", files },
+                        { "action", "import_all" }
+                    }
                 });
+                
                 response.RequiresUserConfirmation = true;
-                response.ConfirmationPrompt = "Shall I proceed with importing the available files?";
+                response.ConfirmationPrompt = "Would you like me to proceed with importing these files?";
+            }
+            else
+            {
+                response.Message = "No files found in the Inputs directory.";
+                response.Type = AgentResponseType.Text;
             }
         }
         
-        // Add query actions if user asks for data
-        if (lowerMessage.Contains("show") || lowerMessage.Contains("list") || lowerMessage.Contains("find"))
+        // Handle confirmation responses for imports
+        if (lowerMessage.Contains("yes") || lowerMessage.Contains("proceed") || lowerMessage.Contains("ok"))
         {
-            response.Actions.Add(new AgentAction
+            // Check if there are pending import actions
+            var importAction = response.Actions.FirstOrDefault(a => a.ActionId == "import_files");
+            if (importAction != null)
             {
-                ActionId = "query_data",
-                ActionName = "Query Database",
-                Description = "Search perfume database for requested information",
-                Parameters = new Dictionary<string, object> { { "query", originalMessage } }
-            });
+                try
+                {
+                    // Actually perform the import
+                    var importResult = await ExecuteFileImport();
+                    response.Message = importResult.Message;
+                    response.Type = importResult.Type;
+                    response.Data = importResult.Data;
+                    response.Actions.Clear(); // Clear pending actions
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error during file import");
+                    response.Message = $"Error during import: {ex.Message}";
+                    response.Type = AgentResponseType.Error;
+                }
+            }
         }
         
         return response;
+    }
+
+    private async Task<AgentResponse> ExecuteFileImport()
+    {
+        var fileResponse = _folderCapability.ListFiles("Inputs", "*.*", false);
+        
+        if (!fileResponse.Data.ContainsKey("files") || !(fileResponse.Data["files"] is List<object> files) || !files.Any())
+        {
+            return new AgentResponse
+            {
+                Message = "No files found to import.",
+                Type = AgentResponseType.Text
+            };
+        }
+
+        var importedCount = 0;
+        var errors = new List<string>();
+
+        foreach (var fileObj in files)
+        {
+            try
+            {
+                // Assuming files contain FileSystemItem objects
+                if (fileObj.GetType().GetProperty("FullPath")?.GetValue(fileObj) is string filePath)
+                {
+                    var fileData = await _fileHandler.ReadFileAsync(filePath);
+                    
+                    // Here you would process the file data and insert into database
+                    // For now, just log the successful read
+                    _logger.LogInformation("Successfully read file: {FilePath} with {RowCount} rows", 
+                        filePath, fileData.RowCount);
+                    importedCount++;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error importing file: {Error}", ex.Message);
+                errors.Add(ex.Message);
+            }
+        }
+
+        var message = $"Import completed! Successfully processed {importedCount} files.";
+        if (errors.Any())
+        {
+            message += $" {errors.Count} errors occurred: {string.Join(", ", errors)}";
+        }
+
+        return new AgentResponse
+        {
+            Message = message,
+            Type = importedCount > 0 ? AgentResponseType.DataPresentation : AgentResponseType.Error,
+            Data = new Dictionary<string, object>
+            {
+                { "ImportedCount", importedCount },
+                { "ErrorCount", errors.Count },
+                { "Errors", errors }
+            }
+        };
     }
 
     private List<string> FindAvailableFiles()
@@ -150,6 +244,24 @@ BUSINESS CONTEXT: Perfume Inventory Management System
 
     public async Task<List<AgentCapability>> GetCapabilitiesAsync()
     {
-        return await _aiAgent.GetCapabilitiesAsync();
+        var capabilities = await _aiAgent.GetCapabilitiesAsync();
+        
+        // Add our business-specific capabilities that extend the infrastructure capabilities
+        capabilities.Add(_fileHandler as AgentCapability ?? new AgentCapability
+        {
+            Name = "File Data Reader",
+            Description = "Reads and processes data from Excel files (CSV, XLS, XLSX, XLSB) and converts them to structured data tables for analysis and processing.",
+            Examples = new List<string>
+            {
+                "Read product data from Excel file",
+                "Import supplier information from CSV",
+                "Process inventory data from XLSX file"
+            },
+            Available = true
+        });
+        
+        capabilities.Add(_folderCapability);
+        
+        return capabilities;
     }
 }

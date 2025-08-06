@@ -1,6 +1,5 @@
 using SacksAIPlatform.DataLayer.Csv.Models;
 using SacksAIPlatform.DataLayer.Enums;
-using Xunit;
 
 namespace SacksAIPlatform.Tests.DataLayer.Csv;
 

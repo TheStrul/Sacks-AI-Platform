@@ -1,6 +1,7 @@
 using SacksAIPlatform.InfrastructuresLayer.AI.Models;
-using SacksAIPlatform.LogicLayer.Services;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
+using SacksAIPlatform.LogicLayer.Services;
 
 namespace SacksAIPlatform.GuiLayer.Chat;
 
@@ -12,14 +13,18 @@ public class ChatInterface
 {
     private readonly ProductsInventoryAIService _aiService;
     private readonly ILogger<ChatInterface> _logger;
+    private readonly IConfiguration _configuration;
     private readonly string _userId;
+    private readonly bool _showInfoLogs;
     private bool _isRunning;
 
-    public ChatInterface(ProductsInventoryAIService aiService, ILogger<ChatInterface> logger, string userId = "user")
+    public ChatInterface(ProductsInventoryAIService aiService, ILogger<ChatInterface> logger, IConfiguration configuration, string userId = "user")
     {
         _aiService = aiService;
         _logger = logger;
+        _configuration = configuration;
         _userId = userId;
+        _showInfoLogs = _configuration.GetValue<bool>("Chat:ShowInfoLogs", false);
     }
 
     public async Task StartAsync()
@@ -72,7 +77,15 @@ public class ChatInterface
         Console.WriteLine("║  Pure conversational AI with full database and file access     ║");
         Console.WriteLine("║  Just chat naturally - I'll understand and execute actions     ║");
         Console.WriteLine("║                                                                  ║");
-        Console.WriteLine("║  ⌨️  System commands: /quit, /clear                             ║");
+        Console.WriteLine("║  ⌨️  System commands: /quit, /clear, /logs                      ║");
+        if (_showInfoLogs)
+        {
+            Console.WriteLine("║  🔍  Debug mode: Info logs enabled                              ║");
+        }
+        else
+        {
+            Console.WriteLine("║  🔇  Quiet mode: Info logs disabled (set Chat:ShowInfoLogs=true)║");
+        }
         Console.WriteLine("╚══════════════════════════════════════════════════════════════════╝");
         
         var capabilities = await _aiService.GetCapabilitiesAsync();
@@ -92,6 +105,12 @@ public class ChatInterface
             case "/clear":
                 Console.Clear();
                 Console.WriteLine("🗑️  Chat cleared!");
+                return true;
+                
+            case "/logs":
+                var currentStatus = _showInfoLogs ? "enabled" : "disabled";
+                Console.WriteLine($"\n🔍 Info logs are currently {currentStatus}");
+                Console.WriteLine("   To change this setting, modify 'Chat:ShowInfoLogs' in .env file and restart the application.");
                 return true;
                 
             default:

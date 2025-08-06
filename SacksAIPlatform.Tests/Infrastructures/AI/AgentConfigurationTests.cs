@@ -1,5 +1,4 @@
 using SacksAIPlatform.InfrastructuresLayer.AI.Models;
-using Xunit;
 using System.Text.Json;
 
 namespace SacksAIPlatform.Tests.Infrastructures.AI;

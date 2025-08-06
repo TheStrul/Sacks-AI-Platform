@@ -2,12 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Serilog;
 using DotNetEnv;
 using SacksAIPlatform.DataLayer.Context;
 using SacksAIPlatform.DataLayer.Repositories.Interfaces;
 using SacksAIPlatform.DataLayer.Repositories.Implementations;
-using SacksAIPlatform.LogicLayer.Services;
 using SacksAIPlatform.LogicLayer.MachineLearning.Pipeline;
 using SacksAIPlatform.InfrastructuresLayer.AI.Services;
 using SacksAIPlatform.InfrastructuresLayer.AI.Interfaces;
@@ -16,6 +16,8 @@ using SacksAIPlatform.DataLayer.Csv.Interfaces;
 using SacksAIPlatform.DataLayer.Csv.Implementations;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing.Interfaces;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing.Implementations;
+using SacksAIPlatform.InfrastructuresLayer.AI.Capabilities;
+using SacksAIPlatform.LogicLayer.Services;
 
 namespace SacksAIPlatform.GuiLayer;
 
@@ -39,22 +41,40 @@ class Program
 
         var builder = Host.CreateApplicationBuilder(args);
 
-        // Add Serilog
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Information()
-            .WriteTo.Console()
-            .CreateLogger();
+        // Add configuration first
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+            .AddEnvironmentVariables()
+            .Build();
 
-        // Add configuration
-        builder.Services.AddSingleton<IConfiguration>(serviceProvider =>
+        // Configure Serilog based on ShowInfoLogs setting
+        var showInfoLogs = configuration.GetValue<bool>("Chat:ShowInfoLogs", false);
+        var loggerConfig = new LoggerConfiguration()
+            .MinimumLevel.Information();
+
+        if (showInfoLogs)
         {
-            var configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                .AddEnvironmentVariables()
-                .Build();
-            return configuration;
-        });
+            loggerConfig = loggerConfig.WriteTo.Console();
+        }
+        else
+        {
+            // Only show warnings and errors in console, but still log everything to file if needed
+            loggerConfig = loggerConfig
+                .WriteTo.Console(restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Warning);
+        }
+
+        Log.Logger = loggerConfig.CreateLogger();
+
+        // Add configuration to services
+        builder.Services.AddSingleton<IConfiguration>(configuration);
+
+        // Configure logging levels based on ShowInfoLogs setting
+        if (!showInfoLogs)
+        {
+            // Override logging configuration to hide info logs
+            builder.Logging.SetMinimumLevel(LogLevel.Warning);
+        }
 
         // Add DbContext
         builder.Services.AddDbContext<SacksDbContext>(options =>
@@ -72,11 +92,10 @@ class Program
         builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         // Register services
-        builder.Services.AddScoped<ProductsBusinessService>();
         builder.Services.AddScoped<ProductMLPipeline>();
-        builder.Services.AddScoped<ProductsImportService>();
         builder.Services.AddScoped<IFileDataReader, FileDataReader>();
         builder.Services.AddScoped<IFiletoProductConverter, FiletoProductConverter>();
+        builder.Services.AddScoped<FolderAndFileCapability>();
 
         // Register AI services - Infrastructure layer AI with business service wrapper
         builder.Services.AddScoped<IIntentRecognitionService, OpenAIIntentRecognitionService>();

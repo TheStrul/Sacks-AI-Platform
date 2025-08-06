@@ -1,8 +1,6 @@
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing.Implementations;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing.Interfaces;
-using System.Data;
 using System.Text;
-using Xunit;
 
 namespace SacksAIPlatform.Tests.Infrastructures.FileProcessing;
 

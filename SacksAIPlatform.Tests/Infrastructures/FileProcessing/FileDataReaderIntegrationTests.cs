@@ -1,6 +1,5 @@
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing.Implementations;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing.Interfaces;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace SacksAIPlatform.Tests.Infrastructures.FileProcessing;

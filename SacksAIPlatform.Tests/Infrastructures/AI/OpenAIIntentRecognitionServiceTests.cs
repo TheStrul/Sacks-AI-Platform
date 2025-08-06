@@ -1,10 +1,7 @@
 using SacksAIPlatform.InfrastructuresLayer.AI.Interfaces;
 using SacksAIPlatform.InfrastructuresLayer.AI.Services;
-using SacksAIPlatform.InfrastructuresLayer.AI.Models;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Configuration;
-using Xunit;
 using DotNetEnv;
 
 namespace SacksAIPlatform.Tests.Infrastructures.AI;

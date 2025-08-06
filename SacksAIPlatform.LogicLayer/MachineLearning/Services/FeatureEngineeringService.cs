@@ -1,6 +1,4 @@
 using SacksAIPlatform.LogicLayer.MachineLearning.Models;
-using SacksAIPlatform.DataLayer.Entities;
-using SacksAIPlatform.DataLayer.Enums;
 
 namespace SacksAIPlatform.LogicLayer.MachineLearning.Services;
 
