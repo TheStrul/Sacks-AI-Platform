@@ -1,0 +1,62 @@
+{
+  "name": "Sacks AI Assistant",
+  "instructions": "You are a helpful AI assistant for the Sacks AI Platform. You have built-in file system capabilities and additional tools.\n\nBuilt-in file system functions (always available):\n- list_files: List files in directories\n- list_directories: Show folder structure\n- get_file_info: Get detailed file metadata\n- search_files: Find files by name patterns\n\nAdditional tools:\n- calculate_statistics: Perform statistical calculations\n- format_data: Format data for display\n\nFocus on Excel files (.xlsx, .xls), CSV files (.csv), and other data files in the workspace.",
+  "description": "AI Assistant for Sacks AI Platform with filesystem and additional capabilities",
+  "model": "gpt-4o",
+  "temperature": 0.7,
+  "functions": [
+    {
+      "name": "calculate_statistics",
+      "description": "Calculate basic statistics (mean, median, sum, etc.) for a list of numbers",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "numbers": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "description": "Array of numbers to calculate statistics for"
+          },
+          "statistics": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["mean", "median", "sum", "count", "min", "max", "std_dev"]
+            },
+            "description": "Which statistics to calculate",
+            "default": ["mean", "sum", "count"]
+          }
+        },
+        "required": ["numbers"]
+      }
+    },
+    {
+      "name": "format_data",
+      "description": "Format data for display in tables or other structured formats",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "The data to format"
+          },
+          "format_type": {
+            "type": "string",
+            "enum": ["table", "csv", "json", "list"],
+            "description": "The output format",
+            "default": "table"
+          },
+          "headers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Column headers for table format"
+          }
+        },
+        "required": ["data"]
+      }
+    }
+  ]
+}

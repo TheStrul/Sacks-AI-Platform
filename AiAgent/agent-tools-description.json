@@ -1,0 +1,389 @@
+﻿{
+  "metadata": {
+    "title": "AiAgent AgentTools Description",
+    "description": "Comprehensive description of all available AgentTools in the AiAgent project",
+    "version": "1.0",
+    "lastUpdated": "2025-01-08",
+    "namespace": "AiAgent.Tools",
+    "baseClass": "LangChain.Chains.StackableChains.Agents.Tools.AgentTool"
+  },
+  "tools": [
+    {
+      "name": "FileSystemAgentTool",
+      "id": "file_system",
+      "category": "File Operations",
+      "description": "Comprehensive file system operations tool for managing files and directories",
+      "fullDescription": "Read, write, list, delete files and directories. Navigate directories and manage directory operations. Input should be JSON with 'operation' and parameters.",
+      "inputFormat": "JSON",
+      "className": "AiAgent.Tools.FileSystemAgentTool",
+      "configurable": true,
+      "securityRestrictions": true,
+      "dependencies": [
+        "Microsoft.Extensions.Logging",
+        "System.Text.Json",
+        "AiAgent.Configuration.FileSystemToolSettings"
+      ],
+      "operations": [
+        {
+          "name": "list",
+          "description": "List files and directories in a specified path",
+          "parameters": {
+            "path": {
+              "type": "string",
+              "required": false,
+              "default": ".",
+              "description": "Directory path to list (defaults to current directory)"
+            }
+          },
+          "example": {
+            "input": "{\"operation\":\"list\",\"path\":\"C:\\\\temp\"}",
+            "description": "Lists files and directories in C:\\temp"
+          }
+        },
+        {
+          "name": "read",
+          "description": "Read the content of a specified file",
+          "parameters": {
+            "path": {
+              "type": "string",
+              "required": true,
+              "description": "Full path to the file to read"
+            }
+          },
+          "example": {
+            "input": "{\"operation\":\"read\",\"path\":\"C:\\\\temp\\\\example.txt\"}",
+            "description": "Reads the content of example.txt file"
+          }
+        },
+        {
+          "name": "write",
+          "description": "Write content to a specified file",
+          "parameters": {
+            "path": {
+              "type": "string",
+              "required": true,
+              "description": "Full path to the file to write"
+            },
+            "content": {
+              "type": "string",
+              "required": true,
+              "description": "Content to write to the file"
+            }
+          },
+          "example": {
+            "input": "{\"operation\":\"write\",\"path\":\"C:\\\\temp\\\\hello.txt\",\"content\":\"Hello World!\"}",
+            "description": "Creates or overwrites hello.txt with 'Hello World!' content"
+          }
+        },
+        {
+          "name": "delete",
+          "description": "Delete a file or directory",
+          "parameters": {
+            "path": {
+              "type": "string",
+              "required": true,
+              "description": "Full path to the file or directory to delete"
+            }
+          },
+          "example": {
+            "input": "{\"operation\":\"delete\",\"path\":\"C:\\\\temp\\\\oldfile.txt\"}",
+            "description": "Deletes the specified file or directory"
+          }
+        },
+        {
+          "name": "create_directory",
+          "description": "Create a new directory",
+          "parameters": {
+            "path": {
+              "type": "string",
+              "required": true,
+              "description": "Full path of the directory to create"
+            }
+          },
+          "example": {
+            "input": "{\"operation\":\"create_directory\",\"path\":\"C:\\\\temp\\\\newfolder\"}",
+            "description": "Creates a new directory called 'newfolder'"
+          }
+        },
+        {
+          "name": "change_directory",
+          "description": "Change the current working directory",
+          "parameters": {
+            "path": {
+              "type": "string",
+              "required": true,
+              "description": "Full path of the directory to change to"
+            }
+          },
+          "example": {
+            "input": "{\"operation\":\"change_directory\",\"path\":\"C:\\\\projects\"}",
+            "description": "Changes current directory to C:\\projects"
+          }
+        },
+        {
+          "name": "get_current_directory",
+          "description": "Get the current working directory",
+          "parameters": {},
+          "example": {
+            "input": "{\"operation\":\"get_current_directory\"}",
+            "description": "Returns the current working directory path"
+          }
+        },
+        {
+          "name": "rename_directory",
+          "description": "Rename a directory",
+          "parameters": {
+            "path": {
+              "type": "string",
+              "required": true,
+              "description": "Full path of the directory to rename"
+            },
+            "content": {
+              "type": "string",
+              "required": true,
+              "description": "New name for the directory"
+            }
+          },
+          "example": {
+            "input": "{\"operation\":\"rename_directory\",\"path\":\"C:\\\\temp\\\\oldfolder\",\"content\":\"newfolder\"}",
+            "description": "Renames 'oldfolder' to 'newfolder'"
+          }
+        }
+      ],
+      "configuration": {
+        "settings": "FileSystemToolSettings",
+        "properties": {
+          "MaxFilesToList": {
+            "type": "int",
+            "default": 20,
+            "description": "Maximum number of files to list in directory operations"
+          },
+          "MaxDirectoriesToList": {
+            "type": "int",
+            "default": 10,
+            "description": "Maximum number of directories to list in directory operations"
+          },
+          "MaxFileContentSize": {
+            "type": "int",
+            "default": 2000,
+            "description": "Maximum file content size to read in characters"
+          },
+          "AllowedRootDirectories": {
+            "type": "List<string>",
+            "default": "[]",
+            "description": "Allowed root directories for file operations (empty = all allowed)"
+          },
+          "BlockedExtensions": {
+            "type": "List<string>",
+            "default": "[\".exe\", \".dll\", \".bin\", \".sys\"]",
+            "description": "Blocked file extensions for read/write operations"
+          }
+        }
+      },
+      "security": {
+        "pathValidation": true,
+        "extensionBlocking": true,
+        "directoryRestrictions": true,
+        "contentSizeLimit": true
+      }
+    },
+    {
+      "name": "WebSearchAgentTool",
+      "id": "web_search",
+      "category": "Web Search",
+      "description": "Web search tool using DuckDuckGo API for internet searches",
+      "fullDescription": "Search the web using DuckDuckGo. Input should be the search query string.",
+      "inputFormat": "Plain Text",
+      "className": "AiAgent.Tools.WebSearchAgentTool",
+      "configurable": true,
+      "securityRestrictions": false,
+      "dependencies": [
+        "Microsoft.Extensions.Logging",
+        "System.Text.Json",
+        "System.Net.Http"
+      ],
+      "operations": [
+        {
+          "name": "search",
+          "description": "Perform a web search using DuckDuckGo",
+          "parameters": {
+            "query": {
+              "type": "string",
+              "required": true,
+              "description": "Search query string"
+            }
+          },
+          "example": {
+            "input": "latest AI news",
+            "description": "Searches for recent AI-related news articles"
+          }
+        }
+      ],
+      "searchCapabilities": {
+        "abstractResults": true,
+        "definitions": true,
+        "instantAnswers": true,
+        "relatedTopics": true,
+        "maxResults": "configurable (default: 5)"
+      },
+      "configuration": {
+        "settings": "WebSearchToolSettings",
+        "properties": {
+          "MaxResults": {
+            "type": "int",
+            "default": 5,
+            "description": "Maximum number of search results to return"
+          },
+          "TimeoutSeconds": {
+            "type": "int",
+            "default": 30,
+            "description": "Search timeout in seconds"
+          },
+          "UserAgent": {
+            "type": "string",
+            "default": "LangChain AI Agent 1.0",
+            "description": "Custom user agent for web requests"
+          }
+        }
+      },
+      "apiEndpoint": "https://api.duckduckgo.com/",
+      "responseTypes": [
+        "Abstract",
+        "Definition", 
+        "InstantAnswer",
+        "RelatedTopics"
+      ]
+    },
+    {
+      "name": "CalculatorAgentTool",
+      "id": "calculator",
+      "category": "Mathematics",
+      "description": "Advanced mathematical calculation tool with support for complex expressions",
+      "fullDescription": "Perform mathematical calculations. Input should be a mathematical expression like '2 + 2' or '15 * 23 + sqrt(144)'.",
+      "inputFormat": "Mathematical Expression",
+      "className": "AiAgent.Tools.CalculatorAgentTool",
+      "configurable": true,
+      "securityRestrictions": false,
+      "dependencies": [
+        "Microsoft.Extensions.Logging",
+        "System.Data"
+      ],
+      "operations": [
+        {
+          "name": "calculate",
+          "description": "Evaluate a mathematical expression",
+          "parameters": {
+            "expression": {
+              "type": "string",
+              "required": true,
+              "description": "Mathematical expression to evaluate"
+            }
+          },
+          "examples": [
+            {
+              "input": "2 + 2",
+              "description": "Simple addition"
+            },
+            {
+              "input": "15 * 23 + sqrt(144)",
+              "description": "Complex expression with square root"
+            },
+            {
+              "input": "2^3 + 5",
+              "description": "Power operation with addition"
+            },
+            {
+              "input": "(10 + 5) * 3 / 2",
+              "description": "Expression with parentheses and order of operations"
+            }
+          ]
+        }
+      ],
+      "supportedOperations": {
+        "basicArithmetic": ["+", "-", "*", "/"],
+        "powerOperations": ["^", "**"],
+        "functions": ["sqrt()"],
+        "symbols": ["×", "÷"],
+        "parentheses": true,
+        "decimalNumbers": true,
+        "negativeNumbers": true
+      },
+      "configuration": {
+        "settings": "CalculatorToolSettings",
+        "properties": {
+          "EnableAdvancedFunctions": {
+            "type": "bool",
+            "default": true,
+            "description": "Enable advanced mathematical functions"
+          },
+          "DecimalPrecision": {
+            "type": "int",
+            "default": 10,
+            "description": "Maximum precision for decimal calculations"
+          }
+        }
+      },
+      "features": {
+        "symbolNormalization": true,
+        "expressionCleaning": true,
+        "functionHandling": true,
+        "resultFormatting": true,
+        "errorHandling": true
+      }
+    }
+  ],
+  "toolIntegration": {
+    "baseClass": "AgentTool",
+    "interface": "ToolTask(string input, CancellationToken cancellationToken)",
+    "initialization": {
+      "required": ["ILogger"],
+      "optional": ["ToolSettings"]
+    },
+    "configuration": {
+      "enabledByDefault": true,
+      "configurableViaBasicConfig": true,
+      "runtimeDisabling": true
+    }
+  },
+  "usagePatterns": {
+    "toolAnalysis": {
+      "description": "Agent analyzes user messages to determine which tool to use",
+      "method": "AnalyzeForToolUsage",
+      "responseFormat": "JSON with tool_name, tool_input, and reasoning"
+    },
+    "toolExecution": {
+      "description": "Agent executes the appropriate tool with formatted input",
+      "method": "ExecuteToolAsync",
+      "errorHandling": "Comprehensive error catching and user-friendly messages"
+    },
+    "responseGeneration": {
+      "description": "Agent generates natural language responses incorporating tool results",
+      "method": "GenerateResponseWithToolResult"
+    }
+  },
+  "extensibility": {
+    "customTools": true,
+    "externalToolsSupport": true,
+    "pluginArchitecture": false,
+    "dynamicLoading": false
+  },
+  "examples": {
+    "fileOperations": [
+      "List files in C:\\temp",
+      "Read content of config.json",
+      "Create a new file with hello world content",
+      "Delete old backup files"
+    ],
+    "webSearch": [
+      "Search for latest AI news",
+      "Find information about .NET 9 features",
+      "Look up weather forecast"
+    ],
+    "calculations": [
+      "Calculate 15 * 23 + sqrt(144)",
+      "What is 2^10?",
+      "Solve (100 + 50) / 3",
+      "Calculate the square root of 256"
+    ]
+  }
+}

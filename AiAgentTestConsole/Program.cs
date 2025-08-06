@@ -1,10 +1,15 @@
-using SacksAIPlatform.InfrastructuresLayer.AI.Services;
-using SacksAIPlatform.InfrastructuresLayer.AI.Models;
+using AiAgent;
+using AiAgent.Configuration;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Events;
 using DotNetEnv;
 
 /// <summary>
-/// Interactive test console for AiAgentBase
-/// Run this to test the AiAgentBase with real OpenAI API calls
+/// Interactive test console for LangChain AI Agent
+/// Run this to test the LangChain AI Agent with real OpenAI API calls and tools
 /// </summary>
 class Program
 {
@@ -13,81 +18,142 @@ class Program
         // Load environment variables from .env file
         try
         {
-            Env.Load();
-            Console.WriteLine("✅ Environment variables loaded from .env file");
+            // The .env file is copied to the executable directory by MSBuild
+            var executableDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            var envPaths = new[]
+            {
+                ".env",                                              // Current working directory
+                Path.Combine(executableDir ?? "", ".env"),          // Same directory as executable (where MSBuild copies it)
+                Path.Combine("..", ".env")                          // Parent directory (workspace root)
+            };
+
+            string? loadedFromPath = null;
+            foreach (var envPath in envPaths)
+            {
+                if (File.Exists(envPath))
+                {
+                    Env.Load(envPath);
+                    loadedFromPath = Path.GetFullPath(envPath);
+                    break;
+                }
+            }
+
+            if (loadedFromPath != null)
+            {
+                Console.WriteLine($"✅ Environment variables loaded from .env file");
+            }
+            else
+            {
+                Console.WriteLine("⚠️  No .env file found");
+                Console.WriteLine("Will try to use environment variables directly...");
+            }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"⚠️  Could not load .env file: {ex.Message}");
             Console.WriteLine("Will try to use environment variables directly...");
         }
-        
-        Console.WriteLine("=== AI Agent Base Test Console ===");
-        Console.WriteLine("Choose test mode:");
-        Console.WriteLine("1. Interactive Chat Test");
-        Console.WriteLine("2. Quick Manual Test");
-        Console.WriteLine();
-        Console.Write("Enter choice (1 or 2): ");
-        
-        var choice = Console.ReadLine();
-        
-        switch (choice)
-        {
-            case "1":
-                await RunInteractiveChatTest();
-                break;
-            case "2":
-                await RunQuickManualTest();
-                break;
-            default:
-                Console.WriteLine("Invalid choice. Running interactive test...");
-                await RunInteractiveChatTest();
-                break;
-        }
+
+        Console.WriteLine("=== LangChain AI Agent Test (requires OpenAI API key) ===");
+        await RunLangChainAgentTest();
     }
 
-    private static async Task RunInteractiveChatTest()
+    private static async Task RunLangChainAgentTest()
     {
-        Console.WriteLine("Starting Interactive Chat Test...");
+        Console.WriteLine("Starting LangChain AI Agent Test...");
         Console.WriteLine();
 
-        var apiKey = await GetApiKeyAsync();
+        var apiKey = GetApiKey();
         if (apiKey == "invalid")
         {
             return;
         }
 
-        // Initialize AiAgentBase
-        AiAgentBase agent;
+        // Configure Serilog - File logging only to avoid interrupting console chat
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Information()
+            .WriteTo.File("logs/ai-agent-.txt", rollingInterval: RollingInterval.Day,
+                         outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+            .CreateLogger();
+
+        // Build services
+        var services = new ServiceCollection();
+        services.AddLogging(builder => builder.AddSerilog());
+
+        var serviceProvider = services.BuildServiceProvider();
+        var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
+        var logger = loggerFactory.CreateLogger<LangChainAiAgent>();
+
+        // Create BasicConfig using the new static factory method
+        var config = BasicConfig.CreateDefault(apiKey);
+        
+        // Optionally customize the config based on appsettings.json
         try
         {
-            agent = new AiAgentBase(apiKey);
-            Console.WriteLine("✅ AiAgentBase created successfully!");
+            var appConfig = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                .Build();
+
+            // Override with appsettings values if they exist
+            if (appConfig["Agent:Name"] != null)
+                config.Agent.Name = appConfig["Agent:Name"]!;
             
-            await agent.InitializeAsync();
-            Console.WriteLine("✅ AiAgentBase initialized successfully!");
+            if (int.TryParse(appConfig["Agent:MaxConversationHistory"], out var maxHistory))
+                config.Agent.MaxConversationHistory = maxHistory;
+
+            if (bool.TryParse(appConfig["Agent:EnableFileSystem"], out var enableFs))
+                config.BasicToolSettings.EnableFileSystem = enableFs;
+
+            if (bool.TryParse(appConfig["Agent:EnableWebSearch"], out var enableWeb))
+                config.BasicToolSettings.EnableWebSearch = enableWeb;
+
+            if (bool.TryParse(appConfig["Agent:EnableCalculator"], out var enableCalc))
+                config.BasicToolSettings.EnableCalculator = enableCalc;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Failed to initialize AiAgentBase: {ex.Message}");
+            Console.WriteLine($"⚠️  Could not load appsettings.json: {ex.Message}");
+            Console.WriteLine("Using default configuration...");
+        }
+
+        // Initialize LangChain AI Agent
+        LangChainAiAgent agent;
+        try
+        {
+            agent = new LangChainAiAgent(config, loggerFactory);
+            Console.WriteLine("✅ LangChain AI Agent created successfully!");
+            Console.WriteLine($"🤖 Agent Name: {config.Agent.Name}");
+            Console.WriteLine("🔧 Agent configured with the following tools:");
+            
+            var availableTools = agent.GetAvailableTools();
+            foreach (var (name, description) in availableTools)
+            {
+                Console.WriteLine($"   • {name}: {description}");
+            }
+            
+            if (availableTools.Count == 0)
+            {
+                Console.WriteLine("   (No tools enabled)");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Failed to initialize LangChain AI Agent: {ex.Message}");
+            logger.LogError(ex, "Failed to initialize agent");
             return;
         }
 
-        // Show capabilities
-        var capabilities = await agent.GetCapabilitiesAsync();
-        Console.WriteLine($"📋 Available capabilities: {capabilities.Count}");
-        foreach (var cap in capabilities)
-        {
-            Console.WriteLine($"   • {cap.Name}: {cap.Description}");
-        }
-        Console.WriteLine();
-
         // Interactive chat loop
-        Console.WriteLine("🤖 AiAgentBase is ready! Type your messages (or 'quit' to exit):");
-        Console.WriteLine("Try: 'Hello', 'What can you do?', 'Tell me about AI'");
+        Console.WriteLine();
+        Console.WriteLine("🤖 LangChain AI Agent is ready! Type your messages (or 'quit' to exit):");
+        Console.WriteLine("Try examples:");
+        Console.WriteLine("   • 'List files in C:\\temp'");
+        Console.WriteLine("   • 'Search for latest AI news'");
+        Console.WriteLine("   • 'Calculate 15 * 23 + sqrt(144)'");
+        Console.WriteLine("   • 'Create a file called test.txt with hello world'");
         Console.WriteLine();
 
-        string userId = "test-user-001";
         while (true)
         {
             Console.Write("You: ");
@@ -96,92 +162,26 @@ class Program
             if (string.IsNullOrWhiteSpace(userInput) || userInput.ToLower() == "quit")
                 break;
 
-            if (userInput.ToLower() == "clear")
-            {
-                await agent.ClearConversationAsync(userId);
-                Console.WriteLine("🧹 Conversation cleared!");
-                continue;
-            }
-
-            if (userInput.ToLower() == "history")
-            {
-                var history = await agent.GetConversationHistoryAsync(userId);
-                Console.WriteLine($"📚 Conversation history ({history.Count} messages):");
-                foreach (var msg in history)
-                {
-                    Console.WriteLine($"   {msg.Role}: {msg.Content}");
-                }
-                continue;
-            }
-
             try
             {
-                Console.WriteLine("🤔 Thinking...");
-                var response = await agent.ProcessMessageAsync(userInput, userId);
-                Console.WriteLine($"🤖 Assistant: {response.Message}");
+                Console.WriteLine("🤔 Processing...");
+                var response = await agent.ProcessMessageAsync(userInput);
+                Console.WriteLine($"🤖 Assistant: {response}");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"❌ Error: {ex.Message}");
+                logger.LogError(ex, "Error processing message: {Message}", userInput);
             }
 
             Console.WriteLine();
         }
 
         Console.WriteLine("👋 Goodbye!");
+        Log.CloseAndFlush();
     }
 
-    private static async Task RunQuickManualTest()
-    {
-        Console.WriteLine("Starting Quick Manual Test...");
-
-        var apiKey = await GetApiKeyAsync();
-        if (apiKey == "invalid")
-        {
-            return;
-        }
-
-        try
-        {
-            // Initialize AiAgentBase
-            var agent = new AiAgentBase(apiKey);
-            Console.WriteLine("✅ AiAgentBase created");
-            
-            await agent.InitializeAsync();
-            Console.WriteLine("✅ AiAgentBase initialized");
-
-            // Test basic conversation
-            Console.WriteLine("📝 Testing basic conversation...");
-            var response = await agent.ProcessMessageAsync("Hello! Can you introduce yourself?");
-            Console.WriteLine($"🤖 Response: {response.Message}");
-
-            // Test capabilities
-            Console.WriteLine("\n📋 Testing capabilities...");
-            var capabilities = await agent.GetCapabilitiesAsync();
-            Console.WriteLine($"Found {capabilities.Count} capabilities:");
-            foreach (var cap in capabilities)
-            {
-                Console.WriteLine($"   • {cap.Name}: {cap.Description}");
-            }
-
-            // Test conversation history
-            Console.WriteLine("\n📚 Testing conversation history...");
-            var history = await agent.GetConversationHistoryAsync();
-            Console.WriteLine($"Found {history.Count} messages in history");
-
-            Console.WriteLine("\n✅ All tests completed successfully!");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"❌ Test failed: {ex.Message}");
-            if (ex.InnerException != null)
-            {
-                Console.WriteLine($"   Inner exception: {ex.InnerException.Message}");
-            }
-        }
-    }
-
-    private static async Task<string> GetApiKeyAsync()
+    private static string GetApiKey()
     {
         // Try to get API key from environment variable
         var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
