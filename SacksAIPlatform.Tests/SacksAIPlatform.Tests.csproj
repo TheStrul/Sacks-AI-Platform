@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <OutputType>Exe</OutputType>
   </PropertyGroup>
 
   <ItemGroup>
@@ -47,10 +48,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\SacksAIPlatform.GuiLayer\.env" Link=".env">
+    <None Include="..\.env" Link=".env">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="..\SacksAIPlatform.GuiLayer\agent-config.json" Link="agent-config.json">
+    <None Include="..\agent-config.json" Link="agent-config.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
