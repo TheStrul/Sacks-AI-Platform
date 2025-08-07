@@ -812,5 +812,22 @@
         }
       ]
     }
+  ],
+  "Suppliers": [
+    {
+      "Name": "Dior",
+      "Type": "Supplier",
+      "Country": "France",
+      "Website": "https://www.dior.com",
+      "Configuration": [
+        {
+          "Name": "Dior",
+          "FileNamePattern": "Dior*.xlsx",
+          "FileExtension": "xlsx"
+        }
+      ]
+
+    }
   ]
 }
+

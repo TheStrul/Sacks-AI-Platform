@@ -8,17 +8,8 @@ using DotNetEnv;
 using SacksAIPlatform.DataLayer.Context;
 using SacksAIPlatform.DataLayer.Repositories.Interfaces;
 using SacksAIPlatform.DataLayer.Repositories.Implementations;
-using SacksAIPlatform.LogicLayer.MachineLearning.Pipeline;
-using SacksAIPlatform.InfrastructuresLayer.AI.Services;
-using SacksAIPlatform.InfrastructuresLayer.AI.Interfaces;
-using SacksAIPlatform.GuiLayer.Chat;
-using SacksAIPlatform.DataLayer.Csv.Interfaces;
-using SacksAIPlatform.DataLayer.Csv.Implementations;
-using SacksAIPlatform.InfrastructuresLayer.FileProcessing.Interfaces;
-using SacksAIPlatform.InfrastructuresLayer.FileProcessing.Implementations;
-using SacksAIPlatform.InfrastructuresLayer.AI.Capabilities;
-using SacksAIPlatform.LogicLayer.Services;
-
+using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
+using SacksAIPlatform.DataLayer.XlsConverter;
 namespace SacksAIPlatform.GuiLayer;
 
 class Program
@@ -92,15 +83,8 @@ class Program
         builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         // Register services
-        builder.Services.AddScoped<ProductMLPipeline>();
-        builder.Services.AddScoped<IFileDataReader, FileDataReader>();
+        builder.Services.AddScoped<FileDataReader, FileDataReader>();
         builder.Services.AddScoped<IFiletoProductConverter, FiletoProductConverter>();
-        builder.Services.AddScoped<FolderAndFileCapability>();
-
-        // Register AI services - Infrastructure layer AI with business service wrapper
-        builder.Services.AddScoped<IConversationalAgent, AiAgent>();
-        builder.Services.AddScoped<ProductsInventoryAIService>();
-        builder.Services.AddScoped<ChatInterface>();
 
         var app = builder.Build();
 
@@ -120,115 +104,12 @@ class Program
             }
         }
 
-        // Start the conversational AI interface
+        
         await StartChatInterfaceAsync(app);
     }
 
-    static async Task StartChatInterfaceAsync(IHost app)
+    private static async Task StartChatInterfaceAsync(IHost app)
     {
-        using var scope = app.Services.CreateScope();
-        
-        try
-        {
-            Log.Information("🤖 Starting Sacks AI Platform - Conversational Agent");
-            Log.Information("🎯 Ready for natural language interaction");
-            Log.Information("");
-            
-            var chatInterface = scope.ServiceProvider.GetRequiredService<ChatInterface>();
-            await chatInterface.StartAsync();
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Failed to start chat interface: {ErrorMessage}", ex.Message);
-        }
-    }
-
-    static async Task<string> SelectCsvFileAsync()
-    {
-        try
-        {
-            Log.Information("🔍 Scanning for CSV files...");
-            
-            // Get current directory
-            var currentDirectory = Directory.GetCurrentDirectory();
-            
-            // Search for CSV files in current directory and subdirectories
-            var csvFiles = Directory.GetFiles(currentDirectory, "*.csv", SearchOption.AllDirectories)
-                .Select(file => new FileInfo(file))
-                .OrderByDescending(file => file.LastWriteTime) // Sort by date, newest first
-                .Take(10) // Limit to 10 most recent files
-                .ToList();
-                
-            if (!csvFiles.Any())
-            {
-                Log.Warning("⚠️ No CSV files found in the current directory or subdirectories.");
-                Log.Information("Current directory: {CurrentDirectory}", currentDirectory);
-                
-                // Return empty string to indicate no file found
-                return string.Empty;
-            }
-            
-            Log.Information("📁 Found {Count} CSV file(s):", csvFiles.Count);
-            Log.Information("");
-            
-            // Display files with details
-            for (int i = 0; i < csvFiles.Count; i++)
-            {
-                var file = csvFiles[i];
-                var sizeKB = file.Length / 1024.0;
-                var relativePath = Path.GetRelativePath(currentDirectory, file.FullName);
-                
-                Log.Information($"  {i + 1}. {file.Name}");
-                Log.Information($"     📍 Path: {relativePath}");
-                Log.Information($"     📊 Size: {sizeKB:F1} KB");
-                Log.Information($"     📅 Modified: {file.LastWriteTime:yyyy-MM-dd HH:mm:ss}");
-                
-                // Try to get record count
-                try
-                {
-                    var lineCount = File.ReadAllLines(file.FullName).Length - 1; // -1 for header
-                    Log.Information($"     📈 Records: ~{lineCount:N0}");
-                }
-                catch
-                {
-                    Log.Information($"     📈 Records: Unable to determine");
-                }
-                
-                Log.Information("");
-            }
-            
-            // Get user selection
-            while (true)
-            {
-                Console.Write($"Please select a file (1-{csvFiles.Count}) or 0 to exit: ");
-                var input = Console.ReadLine();
-                
-                if (int.TryParse(input, out int selection))
-                {
-                    if (selection == 0)
-                    {
-                        Log.Information("⚡ Exiting file selection");
-                        Environment.Exit(0);
-                    }
-                    
-                    if (selection >= 1 && selection <= csvFiles.Count)
-                    {
-                        var selectedFile = csvFiles[selection - 1];
-                        Log.Information("✅ Selected: {FileName}", selectedFile.Name);
-                        Log.Information("📍 Full path: {FullPath}", selectedFile.FullName);
-                        Log.Information("");
-                        
-                        return selectedFile.FullName;
-                    }
-                }
-                
-                Log.Warning("❌ Invalid selection. Please enter a number between 1 and {Count}, or 0 to exit.", csvFiles.Count);
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Failed to scan for CSV files: {ErrorMessage}", ex.Message);
-            return string.Empty;
-        }
+        throw new NotImplementedException();
     }
 }

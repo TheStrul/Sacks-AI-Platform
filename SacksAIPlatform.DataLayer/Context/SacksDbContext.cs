@@ -59,7 +59,7 @@ public class SacksDbContext : DbContext
             entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
             entity.Property(e => e.FileNamePattern).IsRequired().HasMaxLength(100);
             entity.Property(e => e.FileExtension).IsRequired().HasMaxLength(10);
-            entity.Property(e => e.ConfigurationJson).IsRequired().HasColumnType("LONGTEXT");
+            entity.Property(e => e.ConfigurationJson).IsRequired().HasColumnType("NVARCHAR(MAX)");
             entity.Property(e => e.Remarks).HasMaxLength(500);
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.UpdatedAt).IsRequired();

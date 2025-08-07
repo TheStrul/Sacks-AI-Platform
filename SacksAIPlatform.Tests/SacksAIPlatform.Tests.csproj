@@ -33,6 +33,7 @@
   <ItemGroup>
     <ProjectReference Include="..\SacksAIPlatform.InfrastructuresLayer\SacksAIPlatform.InfrastructuresLayer.csproj" />
     <ProjectReference Include="..\SacksAIPlatform.DataLayer\SacksAIPlatform.DataLayer.csproj" />
+    <ProjectReference Include="..\AiAgent\AiAgent.csproj" />
   </ItemGroup>
 
   <ItemGroup>
