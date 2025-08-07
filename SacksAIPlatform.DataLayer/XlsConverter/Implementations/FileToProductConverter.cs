@@ -98,25 +98,32 @@ the parser and the dictionary should be configurable on runTime, meaning, the us
                     try
                     {
                         var product = ParseRowToProduct(r);
-                        if (product.Validate())
+                        if (product != null)
                         {
-                            _result.ValidProducts.Add(product);
+                            if (product.Validate())
+                            {
+                                _result.ValidProducts.Add(product);
+                            }
+                            else
+                            {
+                                // Add detailed validation errors
+                                var validationErrors = product.GetValidationErrors();
+                                foreach (var validationError in validationErrors)
+                                {
+                                    _result.ValidationErrors.Add(new FileValidationError
+                                    {
+                                        RowNumber = i,
+                                        Field = "Product Validation",
+                                        Value = product.Code ?? string.Empty,
+                                        ErrorMessage = validationError,
+                                        RawLine = string.Join(",", r.Cells.Select(c => c.Value))
+                                    });
+                                }
+                            }
                         }
                         else
                         {
-                            // Add detailed validation errors
-                            var validationErrors = product.GetValidationErrors();
-                            foreach (var validationError in validationErrors)
-                            {
-                                _result.ValidationErrors.Add(new FileValidationError
-                                {
-                                    RowNumber = i,
-                                    Field = "Product Validation",
-                                    Value = product.Code ?? string.Empty,
-                                    ErrorMessage = validationError,
-                                    RawLine = string.Join(",", r.Cells.Select(c => c.Value))
-                                });
-                            }
+                            _result.EmptyLines++;
                         }
                     }
                     catch (Exception ex)
@@ -150,25 +157,32 @@ the parser and the dictionary should be configurable on runTime, meaning, the us
             }
             return false;
         }
-        private Product ParseRowToProduct(RowData fields)
+        private Product? ParseRowToProduct(RowData fields)
         {
-            var product = new Product
+            if (fields.HasData)
             {
-                OriginalSource = fields.ToString(),
-            };
+                var product = new Product
+                {
+                    OriginalSource = fields.ToString(),
+                };
 
-            foreach (KeyValuePair<int, PropertyType> keyValue in _configuration.ColumnMapping)
-            {
-                MapFieldToProduct(product, keyValue.Value, fields.Cells[keyValue.Key - 1].Value, fields.Index);
+                foreach (KeyValuePair<int, PropertyType> keyValue in _configuration.ColumnMapping)
+                {
+                    MapFieldToProduct(product, keyValue.Value, fields.Cells[keyValue.Key - 1].Value, fields.Index);
+                }
+
+                foreach (int i in _configuration.DescriptionColumns)
+                {
+                    AnalyzeDescripotionFields(product, fields.Cells[i - 1]);
+                }
+
+                return product;
             }
-
-            foreach (int i in _configuration.DescriptionColumns)
+            else
             {
-                AnalyzeDescripotionFields(product, fields.Cells[i - 1]);
+                // If no data is present, return null
+                return null;
             }
-
-
-            return product;
         }
 
         private void MapFieldToProduct(Product product, PropertyType propertyType, string fieldValue, int rowNumber)
@@ -379,7 +393,7 @@ the parser and the dictionary should be configurable on runTime, meaning, the us
             }
 
             // Use extracted product name if available and current name seems to contain extra info
-            if (!string.IsNullOrEmpty(parsed.ExtractedProductName) && 
+            if (!string.IsNullOrEmpty(parsed.ExtractedProductName) &&
                 parsed.ExtractedProductName.Length < cleanedName.Length)
             {
                 product.Name = parsed.ExtractedProductName;
@@ -393,17 +407,17 @@ the parser and the dictionary should be configurable on runTime, meaning, the us
 
             // For code, we typically expect a direct value, but let's clean it
             var cleanedCode = fieldValue.Trim().Replace("\"", "");
-            
+
             // If the code looks like it might contain extra information, try to parse it
             if (cleanedCode.Contains(" ") && cleanedCode.Length > 20)
             {
                 // This might be a complex description rather than a simple code
                 var parsed = _parser.ParseDescription(fieldValue);
-                
+
                 // Extract potential code from the beginning or look for numeric patterns
                 var words = cleanedCode.Split(' ');
                 var potentialCode = words.FirstOrDefault(w => w.All(char.IsDigit) && w.Length > 5);
-                
+
                 if (!string.IsNullOrEmpty(potentialCode))
                 {
                     product.Code = potentialCode;

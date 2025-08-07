@@ -21,12 +21,14 @@ namespace SacksAIPlatform.DataLayer.XlsConverter
         public List<Product> ValidProducts { get; set; } = new();
         public List<FileValidationError> ValidationErrors { get; set; } = new();
         public int TotalLinesProcessed { get; set; }
+        public int EmptyLines { get; internal set; }
 
         internal void Clear()
         {
             ValidProducts.Clear();
             ValidationErrors.Clear();
             TotalLinesProcessed = 0;
+            EmptyLines = 0;
         }
     }
 

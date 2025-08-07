@@ -275,6 +275,7 @@ class Program
             Console.WriteLine("?? Processing Results");
             Console.WriteLine("-" + new string('-', 25));
             Console.WriteLine($"?? Lines processed: {result.TotalLinesProcessed}");
+            Console.WriteLine($"?? Empty lines: {result.EmptyLines}");
             Console.WriteLine($"? Valid products: {result.ValidProducts.Count}");
             Console.WriteLine($"? Validation errors: {result.ValidationErrors.Count}");
 
@@ -291,13 +292,16 @@ class Program
                     }
                 }
                 Console.WriteLine($"? New products: {newProducts.Count}");
-                Console.WriteLine("\n?? Sample Processed Products (first 5):");
-                foreach (var product in result.ValidProducts.Take(5))
+                if (newProducts.Count > 0)
                 {
-                    Console.WriteLine($"   ?? {product.Code} - {product.Name}");
-                    Console.WriteLine($"      Brand ID: {product.BrandID}, Concentration: {product.Concentration}");
-                    Console.WriteLine($"      Type: {product.Type}, Size: {product.Size} {product.Units}");
-                    Console.WriteLine();
+                    Console.WriteLine("\n?? Sample Processed Products (first 5):");
+                    foreach (var product in result.ValidProducts.Take(5))
+                    {
+                        Console.WriteLine($"   ?? {product.Code} - {product.Name}");
+                        Console.WriteLine($"      Brand ID: {product.BrandID}, Concentration: {product.Concentration}");
+                        Console.WriteLine($"      Type: {product.Type}, Size: {product.Size} {product.Units}");
+                        Console.WriteLine();
+                    }
                 }
             }
 
@@ -876,17 +880,14 @@ P010,""CREED AVENTUS COLLECTOR 120ML PARFUM SPRAY UNISEX"",10,""120ml""";
             // Test 3: Complex Description Parsing
             await TestComplexDescriptionParsing(services, logger);
 
-            // Test 4: File Conversion Integration
-            await TestFileConversionIntegration(services, logger);
-
-            // Test 5: Custom Parsing Rules
+            // Test 4: Custom Parsing Rules
             await TestCustomParsingRules(services, logger);
 
-            // Test 6: Configuration Persistence
+            // Test 5: Configuration Persistence
             await TestConfigurationPersistence(services, logger);
 
-            // Test 7: Example Usage Tests
-            Console.WriteLine("\n?? Test 7: Example Usage Integration");
+            // Test 6: Example Usage Tests
+            Console.WriteLine("\n?? Test 6: Example Usage Integration");
             Console.WriteLine("=" + new string('=', 50));
             TestRunner.RunExampleUsageTests();
 
@@ -1047,83 +1048,6 @@ P010,""CREED AVENTUS COLLECTOR 120ML PARFUM SPRAY UNISEX"",10,""120ml""";
         }
     }
 
-    static async Task TestFileConversionIntegration(IServiceProvider services, ILogger<Program> logger)
-    {
-        Console.WriteLine("\n?? Test 4: File Conversion Integration");
-        Console.WriteLine("=" + new string('=', 50));
-
-        try
-        {
-            var configManager = services.GetRequiredService<ProductParserConfigurationManager>();
-
-            // Create test CSV data
-            await CreateTestCsvFile();
-
-            // Create converter with our configured parser
-            var converter = new FiletoProductConverter(configManager);
-
-            Console.WriteLine("?? Created test CSV file with complex product descriptions");
-            Console.WriteLine("?? Testing file conversion with parser integration...");
-
-            // Create file configuration for our test data
-            var fileConfig = new FileConfiguration
-            {
-                TitleIndex = 0,
-                StartFromRow = 1,
-                EndAtRow = -1,
-                HasInnerTitles = false,
-                FormatName = "TestFormat",
-                ValidNumOfColumns = 4,
-                ColumnMapping = new Dictionary<int, PropertyType>
-                {
-                    { 0, PropertyType.Code },
-                    { 1, PropertyType.Name },
-                    { 2, PropertyType.Brand },
-                    { 3, PropertyType.Size }
-                },
-                DescriptionColumns = new() { 1 }, // Use name column for description parsing
-                IgnoredColumns = new()
-            };
-
-            // Process the file
-            var result = await converter.ConvertFileToProductsAsync("test-data.csv", fileConfig);
-
-            Console.WriteLine($"\n?? Conversion Results:");
-            Console.WriteLine($"   ?? Lines processed: {result.TotalLinesProcessed}");
-            Console.WriteLine($"   ? Valid products: {result.ValidProducts.Count}");
-            Console.WriteLine($"   ? Validation errors: {result.ValidationErrors.Count}");
-
-            // Show some converted products
-            Console.WriteLine($"\n?? Sample converted products:");
-            foreach (var product in result.ValidProducts.Take(3))
-            {
-                Console.WriteLine($"   ?? Code: {product.Code}");
-                Console.WriteLine($"      Name: {product.Name}");
-                Console.WriteLine($"      Concentration: {product.Concentration}");
-                Console.WriteLine($"      Type: {product.Type}");
-                Console.WriteLine($"      Size: {product.Size} {product.Units}");
-                Console.WriteLine($"      Brand ID: {product.BrandID}");
-                Console.WriteLine();
-            }
-
-            if (result.ValidationErrors.Count > 0)
-            {
-                Console.WriteLine($"?? Validation errors found:");
-                foreach (var error in result.ValidationErrors.Take(3))
-                {
-                    Console.WriteLine($"   Row {error.RowNumber}: {error.ErrorMessage}");
-                }
-            }
-
-            logger.LogInformation("File conversion integration test completed successfully");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"? Test failed: {ex.Message}");
-            logger.LogError(ex, "File conversion integration test failed");
-            throw;
-        }
-    }
 
     static async Task TestCustomParsingRules(IServiceProvider services, ILogger<Program> logger)
     {

@@ -155,8 +155,8 @@ namespace SacksAIPlatform.DataLayer.XlsConverter
     public enum PropertyType
     {
         None = -1,
-        Code,
-        Name,
+        Code = 0,
+        Name = 1,
         Brand,
         Concentration,
         Type,
