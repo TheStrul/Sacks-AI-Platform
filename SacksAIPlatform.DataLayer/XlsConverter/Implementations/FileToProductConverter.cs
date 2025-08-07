@@ -30,14 +30,6 @@ the parser and the dictionary should be configurable on runTime, meaning, the us
         private readonly ProductParserConfigurationManager _configManager;
 
 
-        /// <summary>
-        /// Initializes the converter with default parser configuration
-        /// </summary>
-        public FiletoProductConverter()
-        {
-            _configManager = new ProductParserConfigurationManager();
-            _parser = new ProductDescriptionParser(_configManager.CurrentConfiguration);
-        }
 
         /// <summary>
         /// Initializes the converter with a specific parser configuration manager
@@ -106,9 +98,25 @@ the parser and the dictionary should be configurable on runTime, meaning, the us
                     try
                     {
                         var product = ParseRowToProduct(r);
-                        if (product != null)
+                        if (product.Validate())
                         {
                             _result.ValidProducts.Add(product);
+                        }
+                        else
+                        {
+                            // Add detailed validation errors
+                            var validationErrors = product.GetValidationErrors();
+                            foreach (var validationError in validationErrors)
+                            {
+                                _result.ValidationErrors.Add(new FileValidationError
+                                {
+                                    RowNumber = i,
+                                    Field = "Product Validation",
+                                    Value = product.Code ?? string.Empty,
+                                    ErrorMessage = validationError,
+                                    RawLine = string.Join(",", r.Cells.Select(c => c.Value))
+                                });
+                            }
                         }
                     }
                     catch (Exception ex)
@@ -133,12 +141,6 @@ the parser and the dictionary should be configurable on runTime, meaning, the us
             }
         }
 
-        public async Task<FileConversionResult> ConvertCsvToPerfumesAsync(string csvFilePath, bool skipFirstRow = true)
-        {
-            var configuration = FileConfiguration.CreateDefaultConfiguration();
-            configuration.StartFromRow = skipFirstRow ? 1 : 0;
-            return await ConvertFileToProductsAsync(csvFilePath, configuration);
-        }
 
         private bool IsLikelyTitleRow(RowData row)
         {
@@ -148,7 +150,7 @@ the parser and the dictionary should be configurable on runTime, meaning, the us
             }
             return false;
         }
-        private Product? ParseRowToProduct(RowData fields)
+        private Product ParseRowToProduct(RowData fields)
         {
             var product = new Product
             {
@@ -164,6 +166,7 @@ the parser and the dictionary should be configurable on runTime, meaning, the us
             {
                 AnalyzeDescripotionFields(product, fields.Cells[i - 1]);
             }
+
 
             return product;
         }

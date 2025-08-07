@@ -75,36 +75,48 @@
             using var stream = File.Open(fullPath, FileMode.Open, FileAccess.Read);
             using var reader = ExcelReaderFactory.CreateReader(stream);
 
-            // Read as DataSet to get all worksheets
-            var dataSet = reader.AsDataSet(new ExcelDataSetConfiguration()
-            {
-                ConfigureDataTable = (_) => new ExcelDataTableConfiguration()
-                {
-                    UseHeaderRow = false // We'll handle headers ourselves
-                }
-            });
+            // Read the data row by row instead of loading entire dataset into memory
+            int rowIndex = 0;
+            int worksheetIndex = 0;
 
-            // Use the first worksheet
-            if (dataSet.Tables.Count > 0)
+            do
             {
-                var table = dataSet.Tables[0];
-                
-                for (int rowIndex = 0; rowIndex < table.Rows.Count; rowIndex++)
+                Console.WriteLine($"Processing worksheet {worksheetIndex + 1}...");
+                int rowsInCurrentWorksheet = 0;
+
+                while (reader.Read())
                 {
-                    var row = table.Rows[rowIndex];
                     var rowData = new RowData(rowIndex);
-
-                    for (int cellIndex = 0; cellIndex < table.Columns.Count; cellIndex++)
+                    
+                    // Get the field count for this row
+                    int fieldCount = reader.FieldCount;
+                    
+                    for (int cellIndex = 0; cellIndex < fieldCount; cellIndex++)
                     {
-                        var cellValue = row[cellIndex]?.ToString() ?? string.Empty;
+                        // Handle different data types properly
+                        var cellValue = string.Empty;
+                        
+                        if (!reader.IsDBNull(cellIndex))
+                        {
+                            var rawValue = reader.GetValue(cellIndex);
+                            cellValue = rawValue?.ToString() ?? string.Empty;
+                        }
+                        
                         var cellData = new CellData(cellIndex, cellValue);
                         rowData.Cells.Add(cellData);
                     }
 
                     fileData.dataRows.Add(rowData);
+                    rowIndex++;
+                    rowsInCurrentWorksheet++;
                 }
-            }
 
+                Console.WriteLine($"Worksheet {worksheetIndex + 1}: {rowsInCurrentWorksheet} rows processed");
+                worksheetIndex++;
+                
+            } while (reader.NextResult()); // Move to next worksheet if any
+
+            Console.WriteLine($"Total rows processed: {rowIndex}");
             await Task.CompletedTask; // Make method async-compatible
         }
 

@@ -12,6 +12,7 @@ using SacksAIPlatform.DataLayer.Context;
 using SacksAIPlatform.DataLayer.Seeds;
 using Serilog;
 using System.Text.Json;
+using System.Collections.ObjectModel;
 
 namespace SacksAIPlatform.FileConverterTest;
 
@@ -26,11 +27,11 @@ class Program
         Console.WriteLine("=== FileToProductConverter Test Console ===");
         Console.WriteLine("Dear Mr Strul, this application will test the FileToProductConverter with the new parser system.\n");
 
-        // Configure Serilog
+        // Configure Serilog - Redirect to debug window to avoid interfering with console interaction
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Information()
-            .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
-            .WriteTo.File("logs/fileconverter-test-.txt", 
+            .WriteTo.Debug(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+            .WriteTo.File("logs/fileconverter-test-.txt",
                 rollingInterval: RollingInterval.Day,
                 outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] {Message:lj}{NewLine}{Exception}")
             .CreateLogger();
@@ -69,18 +70,39 @@ class Program
             {
                 // Register configuration
                 services.AddSingleton<IConfiguration>(context.Configuration);
-                
+
                 // Register database context (using SQL Server)
-                var connectionString = context.Configuration.GetConnectionString("DefaultConnection") 
+                var connectionString = context.Configuration.GetConnectionString("DefaultConnection")
                     ?? "Server=(localdb)\\mssqllocaldb;Database=SacksAIPlatform;Trusted_Connection=true;MultipleActiveResultSets=true";
-                
+
                 services.AddDbContext<SacksDbContext>(options =>
                     options.UseSqlServer(connectionString));
-                
+
                 // Register parser services
                 services.AddSingleton<ProductParserConfigurationManager>();
                 services.AddSingleton<ProductParserRuntimeManager>();
                 services.AddTransient<FiletoProductConverter>();
+                
+                // Configure logging based on appsettings.json
+                var redirectToDebug = context.Configuration.GetValue<bool>("Logging:RedirectToDebug", true);
+                var enableConsoleLogging = context.Configuration.GetValue<bool>("Logging:EnableConsoleLogging", false);
+                
+                services.AddLogging(logging =>
+                {
+                    logging.ClearProviders();
+                    
+                    if (redirectToDebug)
+                    {
+                        logging.AddDebug();
+                    }
+                    
+                    if (enableConsoleLogging)
+                    {
+                        logging.AddConsole();
+                    }
+                    
+                    logging.SetMinimumLevel(LogLevel.Information);
+                });
             });
 
     static async Task ShowMainMenu(IServiceProvider services, ILogger<Program> logger)
@@ -161,10 +183,10 @@ class Program
 
             // Step 1: Connect to database and retrieve data
             Console.WriteLine("?? Connecting to database...");
-            
+
             // Ensure database exists
             await dbContext.Database.EnsureCreatedAsync();
-            
+
             // Load all data from database
             var products = await dbContext.Products.Include(p => p.Brand).ToListAsync();
             var brands = await dbContext.Brands.Include(b => b.Manufacturer).ToListAsync();
@@ -183,12 +205,12 @@ class Program
                 Console.WriteLine("\n?? Database appears to be empty (no brands found).");
                 Console.Write("Would you like to seed the database with comprehensive perfume brand data? (y/N): ");
                 var seedChoice = Console.ReadLine()?.ToLowerInvariant();
-                
+
                 if (seedChoice == "y" || seedChoice == "yes")
                 {
                     Console.WriteLine("\n?? Seeding database...");
                     await DatabaseSeeder.SeedAsync(dbContext);
-                    
+
                     // Reload data after seeding
                     brands = await dbContext.Brands.Include(b => b.Manufacturer).ToListAsync();
                     Console.WriteLine($"? Database seeded! Now have {brands.Count} brands available.");
@@ -202,7 +224,7 @@ class Program
             // Step 2: Update parser with database brand mappings
             Console.WriteLine("\n?? Configuring parser with database brand mappings...");
             var runtimeManager = new ProductParserRuntimeManager(configManager);
-            
+
             foreach (var brand in brands)
             {
                 if (!string.IsNullOrEmpty(brand.Name))
@@ -256,8 +278,19 @@ class Program
             Console.WriteLine($"? Valid products: {result.ValidProducts.Count}");
             Console.WriteLine($"? Validation errors: {result.ValidationErrors.Count}");
 
+            Collection<Product> newProducts = new Collection<Product>();
             if (result.ValidProducts.Count > 0)
             {
+                foreach (var product in result.ValidProducts)
+                {
+                    // Validate product is new before adding to database
+
+                    if (!await dbContext.Products.AnyAsync(p => p.Code == product.Code))
+                    {
+                        newProducts.Add(product);
+                    }
+                }
+                Console.WriteLine($"? New products: {newProducts.Count}");
                 Console.WriteLine("\n?? Sample Processed Products (first 5):");
                 foreach (var product in result.ValidProducts.Take(5))
                 {
@@ -278,16 +311,22 @@ class Program
             }
 
             // Step 7: Ask if user wants to save results to database
-            Console.WriteLine("\n?? Save to Database?");
-            Console.WriteLine("-" + new string('-', 25));
-            Console.Write("Do you want to save the parsed products to the database? (y/N): ");
-            var saveChoice = Console.ReadLine()?.ToLowerInvariant();
-            
-            if (saveChoice == "y" || saveChoice == "yes")
+            if (newProducts.Count > 0)
             {
-                await SaveProductsToDatabase(dbContext, result.ValidProducts, logger);
-            }
+                Console.WriteLine("\n?? Save to Database?");
+                Console.WriteLine("-" + new string('-', 25));
+                Console.Write("Do you want to save the new parsed products to the database? (y/N): ");
+                var saveChoice = Console.ReadLine()?.ToLowerInvariant();
 
+                if (saveChoice == "y" || saveChoice == "yes")
+                {
+                    await SaveProductsToDatabase(dbContext, newProducts.ToList(), logger);
+                }
+            }
+            else
+            {
+                Console.WriteLine("\n? No new products to save.");
+            }
             logger.LogInformation("Database integration test completed successfully");
         }
         catch (Exception ex)
@@ -343,7 +382,7 @@ class Program
 
         Console.WriteLine("Available file configurations:");
         Console.WriteLine("0. Use default configuration");
-        
+
         for (int i = 0; i < configurations.Count; i++)
         {
             var config = configurations[i];
@@ -385,7 +424,7 @@ class Program
         try
         {
             Console.WriteLine("?? Saving products to database...");
-            
+
             int added = 0;
             int updated = 0;
             int skipped = 0;
@@ -416,12 +455,12 @@ class Program
             }
 
             var saved = await dbContext.SaveChangesAsync();
-            
+
             Console.WriteLine($"? Database save completed:");
             Console.WriteLine($"   ? Added: {added} products");
             Console.WriteLine($"   ?? Updated: {updated} products");
             Console.WriteLine($"   ?? Total saved: {saved} changes");
-            
+
             logger.LogInformation("Saved {Added} new and updated {Updated} products to database", added, updated);
         }
         catch (Exception ex)
@@ -552,11 +591,11 @@ class Program
             var dbContext = scope.ServiceProvider.GetRequiredService<SacksDbContext>();
 
             Console.WriteLine("?? Attempting to connect to database...");
-            
+
             // Test basic connection
             var canConnect = await dbContext.Database.CanConnectAsync();
             Console.WriteLine($"? Can connect to database: {canConnect}");
-            
+
             if (!canConnect)
             {
                 Console.WriteLine("? Cannot connect to database. Check connection string.");
@@ -568,7 +607,7 @@ class Program
             Console.WriteLine("? Database creation/verification completed");
 
             Console.WriteLine("?? Checking table creation...");
-            
+
             // Test querying each table to verify they exist
             var productCount = await dbContext.Products.CountAsync();
             var brandCount = await dbContext.Brands.CountAsync();
@@ -585,7 +624,7 @@ class Program
 
             // Test FileConfigurationHolder specifically (where the LONGTEXT issue was)
             Console.WriteLine("\n?? Testing FileConfigurationHolder table specifically...");
-            
+
             var testConfig = new FileConfigurationHolder
             {
                 Name = "Connection Test Config",
@@ -665,37 +704,37 @@ class Program
 
             // Use DatabaseSeeder to populate with comprehensive brand data
             Console.WriteLine("?? Checking if database seeding is needed...");
-            
+
             // Check if database is empty (DatabaseSeeder already checks this internally)
             var manufacturerCount = await dbContext.Manufacturers.CountAsync();
-            
+
             if (manufacturerCount == 0)
             {
                 Console.WriteLine("?? Database is empty. Seeding with comprehensive perfume brand data...");
                 Console.WriteLine("?? Loading data from embedded JSON resource (perfume-brands-data.json)...");
-                
+
                 await DatabaseSeeder.SeedAsync(dbContext);
-                
+
                 // Show seeding results
                 var newManufacturerCount = await dbContext.Manufacturers.CountAsync();
                 var newBrandCount = await dbContext.Brands.CountAsync();
-                
+
                 Console.WriteLine("? Database seeding completed successfully!");
                 Console.WriteLine($"   ?? Manufacturers added: {newManufacturerCount}");
                 Console.WriteLine($"   ??? Brands added: {newBrandCount}");
-                
+
                 // Show some examples of seeded data
                 var sampleBrands = await dbContext.Brands
                     .Include(b => b.Manufacturer)
                     .Take(10)
                     .ToListAsync();
-                
+
                 Console.WriteLine("\n?? Sample seeded brands:");
                 foreach (var brand in sampleBrands)
                 {
                     Console.WriteLine($"   • {brand.Name} ({brand.CountryOfOrigin}) - {brand.Manufacturer.Name}");
                 }
-                
+
                 if (newBrandCount > 10)
                 {
                     Console.WriteLine($"   ... and {newBrandCount - 10} more brands");
@@ -721,7 +760,7 @@ class Program
     {
         Console.Write("?? Are you sure you want to clear ALL database data? (yes/no): ");
         var confirmation = Console.ReadLine();
-        
+
         if (confirmation?.ToLowerInvariant() != "yes")
         {
             Console.WriteLine("? Operation cancelled.");
@@ -742,7 +781,7 @@ class Program
 
             await dbContext.SaveChangesAsync();
             Console.WriteLine("? Database cleared successfully");
-            
+
             logger.LogInformation("Database cleared successfully");
         }
         catch (Exception ex)
@@ -987,11 +1026,11 @@ P010,""CREED AVENTUS COLLECTOR 120ML PARFUM SPRAY UNISEX"",10,""120ml""";
             foreach (var description in complexDescriptions)
             {
                 Console.WriteLine($"\n?? Testing: {description}");
-                
+
                 var testResult = runtimeManager.TestParsingWithComparison(description);
                 Console.WriteLine($"   ? Changes: {testResult.GetSummary()}");
                 Console.WriteLine($"   ?? Matches: {testResult.FoundMatches}");
-                
+
                 if (testResult.ParsedInfo.MatchedRules.Count > 0)
                 {
                     Console.WriteLine($"   ?? Rules: {string.Join(", ", testResult.ParsedInfo.MatchedRules)}");
@@ -1171,7 +1210,7 @@ P010,""CREED AVENTUS COLLECTOR 120ML PARFUM SPRAY UNISEX"",10,""120ml""";
             // Validate configuration
             Console.WriteLine("? Validating configuration...");
             var errors = configManager.ValidateConfiguration();
-            
+
             if (errors.Count > 0)
             {
                 Console.WriteLine("?? Configuration validation errors:");
@@ -1189,7 +1228,7 @@ P010,""CREED AVENTUS COLLECTOR 120ML PARFUM SPRAY UNISEX"",10,""120ml""";
             var config = configManager.CurrentConfiguration;
             var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
             var configJson = JsonSerializer.Serialize(config, jsonOptions);
-            
+
             Console.WriteLine($"\n?? Current configuration preview (first 500 chars):");
             Console.WriteLine($"```json");
             Console.WriteLine(configJson.Length > 500 ? configJson.Substring(0, 500) + "..." : configJson);
@@ -1234,19 +1273,19 @@ P010,""CREED AVENTUS COLLECTOR 120ML PARFUM SPRAY UNISEX"",10,""120ml""";
             {
                 Console.Write("?? What would you like to name this configuration? (e.g., 'Supplier ABC CSV Format'): ");
                 configName = Console.ReadLine()?.Trim() ?? string.Empty;
-                
+
                 if (string.IsNullOrEmpty(configName))
                 {
                     Console.WriteLine("?? Configuration name cannot be empty. Please try again.");
                     continue;
                 }
-                
+
                 if (configName.Length > 200)
                 {
                     Console.WriteLine("?? Configuration name is too long (max 200 characters). Please try again.");
                     continue;
                 }
-                
+
                 break;
             }
             Console.WriteLine($"? Configuration name: '{configName}'");
@@ -1297,7 +1336,7 @@ P010,""CREED AVENTUS COLLECTOR 120ML PARFUM SPRAY UNISEX"",10,""120ml""";
 
             // Step 3: File Pattern Information
             Console.WriteLine("\n?? Step 3: File Pattern Information");
-            Console.WriteLine("-" + new string('-', 30));
+            Console.WriteLine("-" + new string('=', 30));
 
             // File Name Pattern
             string fileNamePattern;
@@ -1307,19 +1346,19 @@ P010,""CREED AVENTUS COLLECTOR 120ML PARFUM SPRAY UNISEX"",10,""120ml""";
                 Console.WriteLine("   Examples: *.csv, *inventory*.xlsx, supplier-data-*.xls, products.csv");
                 Console.Write("   Pattern: ");
                 fileNamePattern = Console.ReadLine()?.Trim() ?? string.Empty;
-                
+
                 if (string.IsNullOrEmpty(fileNamePattern))
                 {
                     Console.WriteLine("?? File name pattern cannot be empty. Please try again.");
                     continue;
                 }
-                
+
                 if (fileNamePattern.Length > 100)
                 {
                     Console.WriteLine("?? File name pattern is too long (max 100 characters). Please try again.");
                     continue;
                 }
-                
+
                 break;
             }
             Console.WriteLine($"? File pattern: '{fileNamePattern}'");
@@ -1332,31 +1371,31 @@ P010,""CREED AVENTUS COLLECTOR 120ML PARFUM SPRAY UNISEX"",10,""120ml""";
                 Console.WriteLine("   Examples: .csv, .xlsx, .xls, .txt");
                 Console.Write("   Extension: ");
                 fileExtension = Console.ReadLine()?.Trim() ?? string.Empty;
-                
+
                 if (string.IsNullOrEmpty(fileExtension))
                 {
                     Console.WriteLine("?? File extension cannot be empty. Please try again.");
                     continue;
                 }
-                
+
                 if (!fileExtension.StartsWith("."))
                 {
                     fileExtension = "." + fileExtension;
                 }
-                
+
                 if (fileExtension.Length > 10)
                 {
                     Console.WriteLine("?? File extension is too long (max 10 characters). Please try again.");
                     continue;
                 }
-                
+
                 break;
             }
             Console.WriteLine($"? File extension: '{fileExtension}'");
 
             // Step 4: Configuration Type Choice
             Console.WriteLine("\n?? Step 4: Configuration Setup");
-            Console.WriteLine("-" + new string('-', 25));
+            Console.WriteLine("-" + new string('=', 25));
 
             FileConfiguration fileConfig;
             Console.WriteLine("?? How would you like to create the file configuration?");
@@ -1378,13 +1417,13 @@ P010,""CREED AVENTUS COLLECTOR 120ML PARFUM SPRAY UNISEX"",10,""120ml""";
 
             // Step 5: Optional Remarks
             Console.WriteLine("\n?? Step 5: Optional Remarks");
-            Console.WriteLine("-" + new string('-', 25));
+            Console.WriteLine("-" + new string('=', 25));
 
             Console.WriteLine("?? Any additional notes or remarks about this configuration? (optional)");
             Console.WriteLine("   Examples: 'Weekly inventory files', 'Special format for Product X', etc.");
             Console.Write("   Remarks: ");
             var remarks = Console.ReadLine()?.Trim();
-            
+
             if (!string.IsNullOrEmpty(remarks) && remarks.Length > 500)
             {
                 remarks = remarks.Substring(0, 500);
@@ -1393,7 +1432,7 @@ P010,""CREED AVENTUS COLLECTOR 120ML PARFUM SPRAY UNISEX"",10,""120ml""";
 
             // Step 6: Summary and Confirmation
             Console.WriteLine("\n?? Step 6: Review and Confirmation");
-            Console.WriteLine("-" + new string('-', 35));
+            Console.WriteLine("-" + new string('=', 35));
 
             Console.WriteLine("Here's a summary of your new file configuration:");
             Console.WriteLine($"   ?? Name: {configName}");
@@ -1430,8 +1469,8 @@ P010,""CREED AVENTUS COLLECTOR 120ML PARFUM SPRAY UNISEX"",10,""120ml""";
                 Console.WriteLine("\n?? Success!");
                 Console.WriteLine($"? File configuration '{configName}' has been created and saved to the database.");
                 Console.WriteLine($"?? Configuration ID: {fileConfigHolder.Id}");
-                
-                logger.LogInformation("Interactive file configuration created: {ConfigName} for supplier {SupplierName}", 
+
+                logger.LogInformation("Interactive file configuration created: {ConfigName} for supplier {SupplierName}",
                     configName, selectedSupplier.Name);
             }
             else
@@ -1458,19 +1497,19 @@ P010,""CREED AVENTUS COLLECTOR 120ML PARFUM SPRAY UNISEX"",10,""120ml""";
         {
             Console.Write("?? Supplier name: ");
             supplierName = Console.ReadLine()?.Trim() ?? string.Empty;
-            
+
             if (string.IsNullOrEmpty(supplierName))
             {
                 Console.WriteLine("?? Supplier name cannot be empty. Please try again.");
                 continue;
             }
-            
+
             if (supplierName.Length > 200)
             {
                 Console.WriteLine("?? Supplier name is too long (max 200 characters). Please try again.");
                 continue;
             }
-            
+
             break;
         }
 
@@ -1516,7 +1555,7 @@ P010,""CREED AVENTUS COLLECTOR 120ML PARFUM SPRAY UNISEX"",10,""120ml""";
     static async Task<FileConfiguration> CreateCustomFileConfiguration()
     {
         Console.WriteLine("\n?? Creating Custom File Configuration");
-        Console.WriteLine("-" + new string('-', 35));
+        Console.WriteLine("-" + new string('=', 35));
         Console.WriteLine("Let's set up the file structure and column mappings...");
 
         // Start with default and modify
@@ -1533,7 +1572,7 @@ P010,""CREED AVENTUS COLLECTOR 120ML PARFUM SPRAY UNISEX"",10,""120ml""";
         // Row settings
         Console.WriteLine("\n?? Row Settings:");
         Console.WriteLine($"Current settings: Start from row {config.StartFromRow}, End at row {(config.EndAtRow == -1 ? "end of file" : config.EndAtRow.ToString())}");
-        
+
         Console.Write("?? Start reading from which row? (0-based, current: 1): ");
         if (int.TryParse(Console.ReadLine(), out var startRow))
         {
@@ -1560,7 +1599,7 @@ P010,""CREED AVENTUS COLLECTOR 120ML PARFUM SPRAY UNISEX"",10,""120ml""";
         Console.WriteLine("\n?? Column Mapping:");
         Console.WriteLine("Let's map which columns contain which type of data...");
         Console.WriteLine("Available property types: Code, Name, Brand, Concentration, Type, Gender, Size, LilFree, CountryOfOrigin");
-        
+
         config.ColumnMapping.Clear();
         Console.Write("?? How many columns do you want to map? ");
         if (int.TryParse(Console.ReadLine(), out var mappingCount))
