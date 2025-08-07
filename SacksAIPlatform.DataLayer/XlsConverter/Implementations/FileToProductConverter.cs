@@ -4,7 +4,7 @@ namespace SacksAIPlatform.DataLayer.XlsConverter
     using SacksAIPlatform.DataLayer.Enums;
     using SacksAIPlatform.DataLayer.XlsConverter.Helpers;
     using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
-
+    using System.Text.RegularExpressions;
 
     /*
      I need you help in creating a kind of Dictionary helper and a simple parser to be used by class FiletoProductConverter on the proccess of converting raw data into a real Product object.
@@ -28,8 +28,7 @@ the parser and the dictionary should be configurable on runTime, meaning, the us
         private FileConversionResult _result = new FileConversionResult();
         private readonly ProductDescriptionParser _parser;
         private readonly ProductParserConfigurationManager _configManager;
-
-
+        private IInteractiveDecisionHandler? _interactiveHandler;
 
         /// <summary>
         /// Initializes the converter with a specific parser configuration manager
@@ -60,10 +59,22 @@ the parser and the dictionary should be configurable on runTime, meaning, the us
         /// </summary>
         public ProductDescriptionParser Parser => _parser;
 
-
         public async Task<FileConversionResult> ConvertFileToProductsAsync(string fullPath, FileConfiguration configuration)
         {
+            return await ConvertFileToProductsInteractiveAsync(fullPath, configuration, null);
+        }
+
+        public async Task<FileConversionResult> ConvertFileToProductsInteractiveAsync(string fullPath, FileConfiguration configuration, IInteractiveDecisionHandler? interactiveHandler)
+        {
             _result.Clear();
+            _interactiveHandler = interactiveHandler;
+
+            // Pass the runtime manager to the interactive handler if available
+            if (_interactiveHandler != null)
+            {
+                var runtimeManager = new ProductParserRuntimeManager(_configManager);
+                _interactiveHandler.SetRuntimeManager(runtimeManager);
+            }
 
             _configuration = configuration ?? FileConfiguration.CreateDefaultConfiguration();
             try
@@ -97,7 +108,10 @@ the parser and the dictionary should be configurable on runTime, meaning, the us
 
                     try
                     {
-                        var product = ParseRowToProduct(r);
+                        var product = _interactiveHandler != null ? 
+                            await ParseRowToProductInteractiveAsync(r, i) :
+                            ParseRowToProduct(r);
+                            
                         if (product != null)
                         {
                             if (product.Validate())
@@ -128,7 +142,7 @@ the parser and the dictionary should be configurable on runTime, meaning, the us
                     }
                     catch (Exception ex)
                     {
-                        var rowData = string.Join(",", r.Cells);
+                        var rowData = string.Join(",", r.Cells.Select(c => c.Value));
                         _result.ValidationErrors.Add(new FileValidationError
                         {
                             RowNumber = i,
@@ -148,7 +162,6 @@ the parser and the dictionary should be configurable on runTime, meaning, the us
             }
         }
 
-
         private bool IsLikelyTitleRow(RowData row)
         {
             if ((row == null) || row.Cells.Count != _configuration.ValidNumOfColumns)
@@ -157,33 +170,66 @@ the parser and the dictionary should be configurable on runTime, meaning, the us
             }
             return false;
         }
+
         private Product? ParseRowToProduct(RowData fields)
         {
-            if (fields.HasData)
-            {
-                var product = new Product
-                {
-                    OriginalSource = fields.ToString(),
-                };
+            if (!fields.HasData)
+                return null;
 
-                foreach (KeyValuePair<int, PropertyType> keyValue in _configuration.ColumnMapping)
+            var product = new Product
+            {
+                OriginalSource = fields.ToString(),
+            };
+
+            foreach (KeyValuePair<int, PropertyType> keyValue in _configuration.ColumnMapping)
+            {
+                if (keyValue.Key - 1 < fields.Cells.Count)
                 {
                     MapFieldToProduct(product, keyValue.Value, fields.Cells[keyValue.Key - 1].Value, fields.Index);
                 }
+            }
 
-                foreach (int i in _configuration.DescriptionColumns)
+            foreach (int i in _configuration.DescriptionColumns)
+            {
+                if (i - 1 < fields.Cells.Count)
                 {
                     AnalyzeDescripotionFields(product, fields.Cells[i - 1]);
                 }
+            }
 
-                return product;
-            }
-            else
-            {
-                // If no data is present, return null
-                return null;
-            }
+            return product;
         }
+
+        private async Task<Product?> ParseRowToProductInteractiveAsync(RowData fields, int rowNumber)
+        {
+            if (!fields.HasData)
+                return null;
+
+            var product = new Product
+            {
+                OriginalSource = fields.ToString(),
+            };
+
+            foreach (KeyValuePair<int, PropertyType> keyValue in _configuration.ColumnMapping)
+            {
+                if (keyValue.Key - 1 < fields.Cells.Count)
+                {
+                    await MapFieldToProductInteractiveAsync(product, keyValue.Value, fields.Cells[keyValue.Key - 1].Value, rowNumber, fields.ToString());
+                }
+            }
+
+            foreach (int i in _configuration.DescriptionColumns)
+            {
+                if (i - 1 < fields.Cells.Count)
+                {
+                    await AnalyzeDescripotionFieldsInteractiveAsync(product, fields.Cells[i - 1], rowNumber, fields.ToString());
+                }
+            }
+
+            return product;
+        }
+
+        #region Non-Interactive Methods
 
         private void MapFieldToProduct(Product product, PropertyType propertyType, string fieldValue, int rowNumber)
         {
@@ -193,20 +239,14 @@ the parser and the dictionary should be configurable on runTime, meaning, the us
                 {
                     case PropertyType.Code:
                         DoUpdateCode(product, fieldValue, rowNumber);
-                        if (!string.IsNullOrWhiteSpace(fieldValue))
-                            product.Code = fieldValue;
                         break;
 
                     case PropertyType.Name:
                         DoUpdateName(product, fieldValue, rowNumber);
-                        if (!string.IsNullOrWhiteSpace(fieldValue))
-                            product.Name = CleanProductName(fieldValue);
                         break;
 
                     case PropertyType.Brand:
                         DoUpdateBrand(product, fieldValue, rowNumber);
-                        if (int.TryParse(fieldValue, out var brandId))
-                            product.BrandID = brandId;
                         break;
 
                     case PropertyType.Concentration:
@@ -248,6 +288,95 @@ the parser and the dictionary should be configurable on runTime, meaning, the us
             // Use the parser to analyze the description and update the product
             _parser.ParseAndUpdateProduct(product, cellData.Value, overwriteExisting: false);
         }
+
+        #endregion
+
+        #region Interactive Methods
+
+        private async Task MapFieldToProductInteractiveAsync(Product product, PropertyType propertyType, string fieldValue, int rowNumber, string rawRowData)
+        {
+            try
+            {
+                switch (propertyType)
+                {
+                    case PropertyType.Code:
+                        await DoUpdateCodeInteractiveAsync(product, fieldValue, rowNumber, rawRowData);
+                        break;
+
+                    case PropertyType.Name:
+                        await DoUpdateNameInteractiveAsync(product, fieldValue, rowNumber, rawRowData);
+                        break;
+
+                    case PropertyType.Brand:
+                        await DoUpdateBrandInteractiveAsync(product, fieldValue, rowNumber, rawRowData);
+                        break;
+
+                    case PropertyType.Concentration:
+                        await DoUpdateConcentrationInteractiveAsync(product, fieldValue, rowNumber, rawRowData);
+                        break;
+
+                    case PropertyType.Type:
+                        await DoUpdateTypeInteractiveAsync(product, fieldValue, rowNumber, rawRowData);
+                        break;
+
+                    case PropertyType.Gender:
+                        await DoUpdateGenderInteractiveAsync(product, fieldValue, rowNumber, rawRowData);
+                        break;
+
+                    case PropertyType.Size:
+                        await DoUpdateSizeInteractiveAsync(product, fieldValue, rowNumber, rawRowData);
+                        break;
+
+                    case PropertyType.LilFree:
+                        DoUpdateLilFree(product, fieldValue, rowNumber);
+                        break;
+
+                    case PropertyType.CountryOfOrigin:
+                        DoUpdateCountryOfOrigin(product, fieldValue, rowNumber);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new ArgumentException($"Failed to map field '{fieldValue}' to property '{propertyType}' at row {rowNumber}: {ex.Message}");
+            }
+        }
+
+        private async Task AnalyzeDescripotionFieldsInteractiveAsync(Product product, CellData cellData, int rowNumber, string rawRowData)
+        {
+            if (cellData == null || string.IsNullOrWhiteSpace(cellData.Value))
+                return;
+
+            // Use the parser to analyze the description and update the product
+            _parser.ParseAndUpdateProduct(product, cellData.Value, overwriteExisting: false);
+
+            // Check if we should ask for interactive decisions on the parsed results
+            if (_interactiveHandler != null)
+            {
+                var context = new InteractiveContext
+                {
+                    RowNumber = rowNumber,
+                    OriginalText = cellData.Value,
+                    FieldName = "Description",
+                    CurrentProduct = product,
+                    ConfidenceLevel = 0.5,
+                    RawRowData = rawRowData
+                };
+
+                // Ask if user wants to learn from this parsing decision
+                var parsed = _parser.ParseDescription(cellData.Value);
+                var detectedInfo = $"Brand: {parsed.BrandId}, Concentration: {parsed.Concentration}, Type: {parsed.Type}, Size: {parsed.Size}";
+                
+                if (await _interactiveHandler.ShouldLearnFromDecisionAsync(context, cellData.Value, detectedInfo))
+                {
+                    _result.LearnedExamples++;
+                }
+            }
+        }
+
+        #endregion
+
+        #region Standard Update Methods
 
         private void DoUpdateConcentration(Product product, string fieldValue, int rowNumber)
         {
@@ -345,6 +474,13 @@ the parser and the dictionary should be configurable on runTime, meaning, the us
             if (string.IsNullOrWhiteSpace(fieldValue))
                 return;
 
+            // Try direct parsing as ID first
+            if (int.TryParse(fieldValue, out var brandId))
+            {
+                product.BrandID = brandId;
+                return;
+            }
+
             // Use the parser to look up brand by name
             var parsed = _parser.ParseDescription(fieldValue);
             if (parsed.BrandId.HasValue)
@@ -431,6 +567,467 @@ the parser and the dictionary should be configurable on runTime, meaning, the us
             }
         }
 
+        #endregion
+
+        #region Interactive Update Methods
+
+        private async Task DoUpdateBrandInteractiveAsync(Product product, string fieldValue, int rowNumber, string rawRowData)
+        {
+            if (string.IsNullOrWhiteSpace(fieldValue))
+                return;
+
+            // Try direct parsing as ID first
+            if (int.TryParse(fieldValue, out var brandId))
+            {
+                product.BrandID = brandId;
+                return;
+            }
+
+            // Use the parser to look up brand by name
+            var parsed = _parser.ParseDescription(fieldValue);
+            
+            if (_interactiveHandler != null)
+            {
+                // Create possible brand options
+                var possibleBrands = new List<BrandOption>();
+                
+                if (parsed.BrandId.HasValue)
+                {
+                    possibleBrands.Add(new BrandOption
+                    {
+                        BrandId = parsed.BrandId.Value,
+                        BrandName = "Detected Brand",
+                        ManufacturerName = "Unknown",
+                        MatchScore = 0.8,
+                        MatchReason = "Parser detection"
+                    });
+                }
+
+                var context = new InteractiveContext
+                {
+                    RowNumber = rowNumber,
+                    OriginalText = fieldValue,
+                    FieldName = "Brand",
+                    CurrentProduct = product,
+                    ConfidenceLevel = parsed.BrandId.HasValue ? 0.8 : 0.3,
+                    RawRowData = rawRowData
+                };
+
+                var decision = await _interactiveHandler.ResolveBrandAmbiguityAsync(context, possibleBrands);
+                if (decision.HasValue)
+                {
+                    product.BrandID = decision.Value;
+                    _result.InteractiveDecisions++;
+                    return;
+                }
+            }
+
+            // Fallback to parser result
+            if (parsed.BrandId.HasValue)
+            {
+                product.BrandID = parsed.BrandId.Value;
+            }
+        }
+
+        private async Task DoUpdateConcentrationInteractiveAsync(Product product, string fieldValue, int rowNumber, string rawRowData)
+        {
+            if (string.IsNullOrWhiteSpace(fieldValue))
+                return;
+
+            // Try direct parsing first
+            var concentration = ParseConcentration(fieldValue);
+            var confidence = concentration != Concentration.Unknown ? 0.9 : 0.3;
+
+            if (_interactiveHandler != null && confidence < 0.7)
+            {
+                var possibleConcentrations = new List<ConcentrationOption>();
+
+                // Add possible concentrations based on text analysis
+                if (fieldValue.ToLowerInvariant().Contains("edt"))
+                    possibleConcentrations.Add(new ConcentrationOption { Concentration = Concentration.EDT, DisplayName = "Eau de Toilette (EDT)", MatchScore = 0.8, MatchReason = "Contains 'EDT'" });
+                
+                if (fieldValue.ToLowerInvariant().Contains("edp"))
+                    possibleConcentrations.Add(new ConcentrationOption { Concentration = Concentration.EDP, DisplayName = "Eau de Parfum (EDP)", MatchScore = 0.8, MatchReason = "Contains 'EDP'" });
+                
+                if (fieldValue.ToLowerInvariant().Contains("parfum") || fieldValue.ToLowerInvariant().Contains("perfume"))
+                    possibleConcentrations.Add(new ConcentrationOption { Concentration = Concentration.Parfum, DisplayName = "Parfum", MatchScore = 0.7, MatchReason = "Contains 'parfum'" });
+
+                var context = new InteractiveContext
+                {
+                    RowNumber = rowNumber,
+                    OriginalText = fieldValue,
+                    FieldName = "Concentration",
+                    CurrentProduct = product,
+                    ConfidenceLevel = confidence,
+                    RawRowData = rawRowData
+                };
+
+                var decision = await _interactiveHandler.ResolveConcentrationAmbiguityAsync(context, possibleConcentrations);
+                if (decision.HasValue)
+                {
+                    product.Concentration = decision.Value;
+                    _result.InteractiveDecisions++;
+                    return;
+                }
+            }
+
+            // Fallback to direct parsing or parser
+            if (concentration != Concentration.Unknown)
+            {
+                product.Concentration = concentration;
+            }
+            else
+            {
+                var parsed = _parser.ParseDescription(fieldValue);
+                if (parsed.Concentration.HasValue)
+                {
+                    product.Concentration = parsed.Concentration.Value;
+                }
+            }
+        }
+
+        private async Task DoUpdateSizeInteractiveAsync(Product product, string fieldValue, int rowNumber, string rawRowData)
+        {
+            if (string.IsNullOrWhiteSpace(fieldValue))
+                return;
+
+            // Try direct parsing first
+            var size = ParseSize(fieldValue);
+            var units = ParseUnits(fieldValue);
+            var confidence = size != "0" ? 0.8 : 0.3;
+
+            if (_interactiveHandler != null && confidence < 0.7)
+            {
+                var possibleSizes = new List<SizeOption>();
+
+                // Extract potential sizes from the text
+                var sizeMatches = Regex.Matches(fieldValue, @"(\d+(?:\.\d+)?)\s*(ml|oz|g)", RegexOptions.IgnoreCase);
+                foreach (Match match in sizeMatches)
+                {
+                    var sizeValue = match.Groups[1].Value;
+                    var unitText = match.Groups[2].Value.ToLowerInvariant();
+                    var unit = unitText switch
+                    {
+                        "oz" => Units.oz,
+                        "g" => Units.g,
+                        _ => Units.ml
+                    };
+
+                    possibleSizes.Add(new SizeOption
+                    {
+                        Size = sizeValue,
+                        Units = unit,
+                        MatchScore = 0.7,
+                        MatchReason = $"Extracted from '{match.Value}'"
+                    });
+                }
+
+                var context = new InteractiveContext
+                {
+                    RowNumber = rowNumber,
+                    OriginalText = fieldValue,
+                    FieldName = "Size",
+                    CurrentProduct = product,
+                    ConfidenceLevel = confidence,
+                    RawRowData = rawRowData
+                };
+
+                var decision = await _interactiveHandler.ResolveSizeAmbiguityAsync(context, possibleSizes);
+                if (decision != null)
+                {
+                    product.Size = decision.Size;
+                    product.Units = decision.Units;
+                    _result.InteractiveDecisions++;
+                    return;
+                }
+            }
+
+            // Fallback to direct parsing or parser
+            if (size != "0")
+            {
+                product.Size = size;
+                product.Units = units;
+            }
+            else
+            {
+                var parsed = _parser.ParseDescription(fieldValue);
+                if (!string.IsNullOrEmpty(parsed.Size))
+                {
+                    product.Size = parsed.Size;
+                    if (parsed.Units.HasValue)
+                    {
+                        product.Units = parsed.Units.Value;
+                    }
+                }
+            }
+        }
+
+        private async Task DoUpdateTypeInteractiveAsync(Product product, string fieldValue, int rowNumber, string rawRowData)
+        {
+            if (string.IsNullOrWhiteSpace(fieldValue))
+                return;
+
+            // Try direct parsing first
+            var type = ParseType(fieldValue);
+            var confidence = type != PerfumeType.Spray || fieldValue.ToLowerInvariant().Contains("spray") ? 0.8 : 0.4;
+
+            if (_interactiveHandler != null && confidence < 0.7)
+            {
+                var options = new List<string>
+                {
+                    "Spray",
+                    "Splash",
+                    "Oil",
+                    "Solid",
+                    "Rollette",
+                    "Cologne"
+                };
+
+                var context = new InteractiveContext
+                {
+                    RowNumber = rowNumber,
+                    OriginalText = fieldValue,
+                    FieldName = "Type",
+                    CurrentProduct = product,
+                    ConfidenceLevel = confidence,
+                    RawRowData = rawRowData
+                };
+
+                var decision = await _interactiveHandler.ResolveGeneralAmbiguityAsync(context, 
+                    $"What type of perfume is this? Text: '{fieldValue}'", options);
+                
+                if (decision.HasValue && decision.Value > 0)
+                {
+                    var selectedType = (decision.Value - 1) switch
+                    {
+                        0 => PerfumeType.Spray,
+                        1 => PerfumeType.Splash,
+                        2 => PerfumeType.Oil,
+                        3 => PerfumeType.Solid,
+                        4 => PerfumeType.Rollette,
+                        5 => PerfumeType.Cologne,
+                        _ => PerfumeType.Spray
+                    };
+                    product.Type = selectedType;
+                    _result.InteractiveDecisions++;
+                    return;
+                }
+            }
+
+            // Fallback to direct parsing or parser
+            if (type != PerfumeType.Spray || fieldValue.ToLowerInvariant().Contains("spray"))
+            {
+                product.Type = type;
+            }
+            else
+            {
+                var parsed = _parser.ParseDescription(fieldValue);
+                if (parsed.Type.HasValue)
+                {
+                    product.Type = parsed.Type.Value;
+                }
+            }
+        }
+
+        private async Task DoUpdateGenderInteractiveAsync(Product product, string fieldValue, int rowNumber, string rawRowData)
+        {
+            if (string.IsNullOrWhiteSpace(fieldValue))
+                return;
+
+            // Try direct parsing first
+            var gender = ParseGender(fieldValue);
+            var confidence = gender != Gender.Unisex || fieldValue.ToLowerInvariant().Contains("unisex") ? 0.8 : 0.4;
+
+            if (_interactiveHandler != null && confidence < 0.7)
+            {
+                var options = new List<string>
+                {
+                    "Male/Men",
+                    "Female/Women", 
+                    "Unisex"
+                };
+
+                var context = new InteractiveContext
+                {
+                    RowNumber = rowNumber,
+                    OriginalText = fieldValue,
+                    FieldName = "Gender",
+                    CurrentProduct = product,
+                    ConfidenceLevel = confidence,
+                    RawRowData = rawRowData
+                };
+
+                var decision = await _interactiveHandler.ResolveGeneralAmbiguityAsync(context, 
+                    $"What gender is this perfume for? Text: '{fieldValue}'", options);
+                
+                if (decision.HasValue && decision.Value > 0)
+                {
+                    var selectedGender = (decision.Value - 1) switch
+                    {
+                        0 => Gender.Male,
+                        1 => Gender.Female,
+                        2 => Gender.Unisex,
+                        _ => Gender.Unisex
+                    };
+                    product.Gender = selectedGender;
+                    _result.InteractiveDecisions++;
+                    return;
+                }
+            }
+
+            // Fallback to direct parsing or parser
+            if (gender != Gender.Unisex || fieldValue.ToLowerInvariant().Contains("unisex"))
+            {
+                product.Gender = gender;
+            }
+            else
+            {
+                var parsed = _parser.ParseDescription(fieldValue);
+                if (parsed.Gender.HasValue)
+                {
+                    product.Gender = parsed.Gender.Value;
+                }
+            }
+        }
+
+        private async Task DoUpdateNameInteractiveAsync(Product product, string fieldValue, int rowNumber, string rawRowData)
+        {
+            if (string.IsNullOrWhiteSpace(fieldValue))
+                return;
+
+            // Clean the product name
+            var cleanedName = CleanProductName(fieldValue);
+            product.Name = cleanedName;
+
+            // Try to extract brand information from the product name
+            var parsed = _parser.ParseDescription(fieldValue);
+            if (parsed.BrandId.HasValue && product.BrandID == 0)
+            {
+                product.BrandID = parsed.BrandId.Value;
+            }
+
+            // Check if we should ask about extracted product name
+            if (_interactiveHandler != null && !string.IsNullOrEmpty(parsed.ExtractedProductName) && 
+                parsed.ExtractedProductName.Length < cleanedName.Length)
+            {
+                var context = new InteractiveContext
+                {
+                    RowNumber = rowNumber,
+                    OriginalText = fieldValue,
+                    FieldName = "Name",
+                    CurrentProduct = product,
+                    ConfidenceLevel = 0.6,
+                    RawRowData = rawRowData
+                };
+
+                var options = new List<string>
+                {
+                    $"Use extracted name: '{parsed.ExtractedProductName}'",
+                    $"Keep full name: '{cleanedName}'"
+                };
+
+                var decision = await _interactiveHandler.ResolveGeneralAmbiguityAsync(context, 
+                    "Which product name should I use?", options);
+                
+                if (decision.HasValue && decision.Value == 1)
+                {
+                    product.Name = parsed.ExtractedProductName;
+                    _result.InteractiveDecisions++;
+                }
+            }
+            else if (!string.IsNullOrEmpty(parsed.ExtractedProductName) && parsed.ExtractedProductName.Length < cleanedName.Length)
+            {
+                product.Name = parsed.ExtractedProductName;
+            }
+        }
+
+        private async Task DoUpdateCodeInteractiveAsync(Product product, string fieldValue, int rowNumber, string rawRowData)
+        {
+            if (string.IsNullOrWhiteSpace(fieldValue))
+                return;
+
+            // For code, we typically expect a direct value, but let's clean it
+            var cleanedCode = fieldValue.Trim().Replace("\"", "");
+
+            // If the code looks like it might contain extra information, try to parse it
+            if (cleanedCode.Contains(" ") && cleanedCode.Length > 20)
+            {
+                if (_interactiveHandler != null)
+                {
+                    var words = cleanedCode.Split(' ');
+                    var potentialCode = words.FirstOrDefault(w => w.All(char.IsDigit) && w.Length > 5);
+                    
+                    var options = new List<string>();
+                    if (!string.IsNullOrEmpty(potentialCode))
+                        options.Add($"Use numeric code: '{potentialCode}'");
+                    
+                    options.Add($"Use first part: '{words[0]}'");
+                    options.Add($"Use full text as code: '{cleanedCode}'");
+
+                    var context = new InteractiveContext
+                    {
+                        RowNumber = rowNumber,
+                        OriginalText = fieldValue,
+                        FieldName = "Code",
+                        CurrentProduct = product,
+                        ConfidenceLevel = 0.4,
+                        RawRowData = rawRowData
+                    };
+
+                    var decision = await _interactiveHandler.ResolveGeneralAmbiguityAsync(context, 
+                        "This looks like a complex description rather than a simple code. What should I use as the product code?", options);
+                    
+                    if (decision.HasValue && decision.Value > 0)
+                    {
+                        var selectedCode = (decision.Value - 1) switch
+                        {
+                            0 when !string.IsNullOrEmpty(potentialCode) => potentialCode,
+                            _ when !string.IsNullOrEmpty(potentialCode) => (decision.Value - 2) switch
+                            {
+                                0 => words[0],
+                                1 => cleanedCode,
+                                _ => words[0]
+                            },
+                            0 => words[0],
+                            1 => cleanedCode,
+                            _ => words[0]
+                        };
+                        
+                        product.Code = selectedCode;
+                        _result.InteractiveDecisions++;
+
+                        // Also parse for other properties
+                        _parser.ParseAndUpdateProduct(product, fieldValue, overwriteExisting: false);
+                        return;
+                    }
+                }
+
+                // Fallback logic
+                var fallbackWords = cleanedCode.Split(' ');
+                var fallbackPotentialCode = fallbackWords.FirstOrDefault(w => w.All(char.IsDigit) && w.Length > 5);
+
+                if (!string.IsNullOrEmpty(fallbackPotentialCode))
+                {
+                    product.Code = fallbackPotentialCode;
+                }
+                else
+                {
+                    product.Code = fallbackWords[0];
+                }
+
+                _parser.ParseAndUpdateProduct(product, fieldValue, overwriteExisting: false);
+            }
+            else
+            {
+                // Direct assignment for simple codes
+                product.Code = cleanedCode;
+            }
+        }
+
+        #endregion
+
+        #region Helper Methods
+
         private Units ParseUnitsFromText(string unitsField)
         {
             if (string.IsNullOrWhiteSpace(unitsField))
@@ -461,7 +1058,7 @@ the parser and the dictionary should be configurable on runTime, meaning, the us
                 return "0";
 
             // Extract numeric part
-            var cleanSize = System.Text.RegularExpressions.Regex.Match(sizeField, @"[\d.]+").Value;
+            var cleanSize = Regex.Match(sizeField, @"[\d.]+").Value;
             return string.IsNullOrEmpty(cleanSize) ? "0" : cleanSize;
         }
 
@@ -569,5 +1166,7 @@ the parser and the dictionary should be configurable on runTime, meaning, the us
                 .Replace("\"\"", "\"") // Handle escaped quotes (convert "" to ")
                 .Trim(); // Final trim after processing
         }
+
+        #endregion
     }
 }

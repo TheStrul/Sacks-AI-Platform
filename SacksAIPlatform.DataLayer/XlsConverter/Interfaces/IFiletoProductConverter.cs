@@ -1,4 +1,3 @@
-
 namespace SacksAIPlatform.DataLayer.XlsConverter
 {
 
@@ -14,6 +13,15 @@ namespace SacksAIPlatform.DataLayer.XlsConverter
         /// <param name="configuration">CSV parsing configuration, null uses default</param>
         /// <returns>List of converted Product entities with validation results</returns>
         Task<FileConversionResult> ConvertFileToProductsAsync(string filePath, FileConfiguration configuration);
+
+        /// <summary>
+        /// Converts CSV file to a list of Product entities using flexible configuration with interactive decision support
+        /// </summary>
+        /// <param name="filePath">Path to the CSV file</param>
+        /// <param name="configuration">CSV parsing configuration, null uses default</param>
+        /// <param name="interactiveHandler">Handler for interactive user decisions when parser is uncertain</param>
+        /// <returns>List of converted Product entities with validation results</returns>
+        Task<FileConversionResult> ConvertFileToProductsInteractiveAsync(string filePath, FileConfiguration configuration, IInteractiveDecisionHandler interactiveHandler);
     }
 
     public class FileConversionResult
@@ -22,6 +30,8 @@ namespace SacksAIPlatform.DataLayer.XlsConverter
         public List<FileValidationError> ValidationErrors { get; set; } = new();
         public int TotalLinesProcessed { get; set; }
         public int EmptyLines { get; internal set; }
+        public int InteractiveDecisions { get; set; }
+        public int LearnedExamples { get; set; }
 
         internal void Clear()
         {
@@ -29,6 +39,8 @@ namespace SacksAIPlatform.DataLayer.XlsConverter
             ValidationErrors.Clear();
             TotalLinesProcessed = 0;
             EmptyLines = 0;
+            InteractiveDecisions = 0;
+            LearnedExamples = 0;
         }
     }
 

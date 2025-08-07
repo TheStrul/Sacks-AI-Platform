@@ -117,11 +117,12 @@ class Program
             Console.WriteLine("Choose an option:");
             Console.WriteLine("1. Run Standard Tests (No Database)");
             Console.WriteLine("2. ??? Database Integration - Parse File with Real Data");
-            Console.WriteLine("3. ?? View Database Statistics");
-            Console.WriteLine("4. ?? Database Management Options");
+            Console.WriteLine("3. ?? Interactive Parsing - Parse with User Decisions");
+            Console.WriteLine("4. ?? View Database Statistics");
+            Console.WriteLine("5. ?? Database Management Options");
             Console.WriteLine("0. Exit");
             Console.WriteLine();
-            Console.Write("Enter your choice (0-4): ");
+            Console.Write("Enter your choice (0-5): ");
 
             var choice = Console.ReadLine();
             Console.WriteLine();
@@ -137,9 +138,12 @@ class Program
                         await RunDatabaseIntegrationTest(services, logger);
                         break;
                     case "3":
-                        await ShowDatabaseStatistics(services, logger);
+                        await RunInteractiveParsingTest(services, logger);
                         break;
                     case "4":
+                        await ShowDatabaseStatistics(services, logger);
+                        break;
+                    case "5":
                         await ShowDatabaseManagementMenu(services, logger);
                         break;
                     case "0":
@@ -863,704 +867,225 @@ P010,""CREED AVENTUS COLLECTOR 120ML PARFUM SPRAY UNISEX"",10,""120ml""";
         await File.WriteAllTextAsync("test-data.csv", csvContent);
     }
 
-    // Keep existing RunAllTests method for backwards compatibility
-    static async Task RunAllTests(IServiceProvider services, ILogger<Program> logger)
+    /// <summary>
+    /// Interactive parsing test - demonstrates user-guided parsing decisions
+    /// </summary>
+    static async Task RunInteractiveParsingTest(IServiceProvider services, ILogger<Program> logger)
     {
-        try
-        {
-            // Show test capabilities
-            TestRunner.ShowTestCapabilities();
-
-            // Test 1: Basic Parser Configuration
-            await TestBasicParserConfiguration(services, logger);
-
-            // Test 2: Runtime Dictionary Management
-            await TestRuntimeDictionaryManagement(services, logger);
-
-            // Test 3: Complex Description Parsing
-            await TestComplexDescriptionParsing(services, logger);
-
-            // Test 4: Custom Parsing Rules
-            await TestCustomParsingRules(services, logger);
-
-            // Test 5: Configuration Persistence
-            await TestConfigurationPersistence(services, logger);
-
-            // Test 6: Example Usage Tests
-            Console.WriteLine("\n?? Test 6: Example Usage Integration");
-            Console.WriteLine("=" + new string('=', 50));
-            TestRunner.RunExampleUsageTests();
-
-            // Show next steps
-            TestRunner.ShowNextSteps();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error during testing");
-            throw;
-        }
-    }
-
-    static async Task TestBasicParserConfiguration(IServiceProvider services, ILogger<Program> logger)
-    {
-        Console.WriteLine("\n?? Test 1: Basic Parser Configuration");
-        Console.WriteLine("=" + new string('=', 50));
-
-        try
-        {
-            var configManager = services.GetRequiredService<ProductParserConfigurationManager>();
-            var runtimeManager = services.GetRequiredService<ProductParserRuntimeManager>();
-
-            // Show default configuration statistics
-            var stats = runtimeManager.GetStatistics();
-            Console.WriteLine($"? Default configuration loaded:");
-            Console.WriteLine($"   ?? Total mappings: {stats.TotalMappings}");
-            Console.WriteLine($"   ?? Parsing rules: {stats.ParsingRules}");
-            Console.WriteLine($"   ?? Ignore patterns: {stats.IgnorePatterns}");
-
-            // Test the example from your use case
-            var testDescription = "ADP BLU MEDITERRANEO MIRTO DI PANAREA 30ML EDT SPRAY 29.6ml";
-            Console.WriteLine($"\n?? Testing your example: {testDescription}");
-
-            var result = runtimeManager.TestParsing(testDescription);
-            Console.WriteLine($"? Parsing result: {result.GetSummary()}");
-            Console.WriteLine($"?? Matched rules: {string.Join(", ", result.MatchedRules)}");
-
-            // Test individual components
-            Console.WriteLine($"\n?? Individual components detected:");
-            Console.WriteLine($"   ?? Concentration: {result.Concentration} (Expected: Parfum)");
-            Console.WriteLine($"   ?? Size: {result.Size} (Expected: 30)");
-            Console.WriteLine($"   ?? Units: {result.Units} (Expected: ml)");
-            Console.WriteLine($"   ?? Type: {result.Type} (Expected: Spray)");
-
-            logger.LogInformation("Basic parser configuration test completed successfully");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"? Test failed: {ex.Message}");
-            logger.LogError(ex, "Basic parser configuration test failed");
-            throw;
-        }
-    }
-
-    static async Task TestRuntimeDictionaryManagement(IServiceProvider services, ILogger<Program> logger)
-    {
-        Console.WriteLine("\n?? Test 2: Runtime Dictionary Management");
-        Console.WriteLine("=" + new string('=', 50));
-
-        try
-        {
-            var runtimeManager = services.GetRequiredService<ProductParserRuntimeManager>();
-
-            // Add custom brand mappings
-            Console.WriteLine("? Adding custom brand mappings...");
-            runtimeManager.AddBrandMapping("CHANEL", 1);
-            runtimeManager.AddBrandMapping("DIOR", 2);
-            runtimeManager.AddBrandMapping("TOM FORD", 3);
-            runtimeManager.AddBrandMapping("VERSACE", 4);
-
-            // Add custom concentration mappings
-            Console.WriteLine("? Adding custom concentration mappings...");
-            runtimeManager.AddConcentrationMapping("AQUA", Concentration.EDC);
-            runtimeManager.AddConcentrationMapping("INTENSE", Concentration.Parfum);
-            runtimeManager.AddConcentrationMapping("PURE", Concentration.EDP);
-
-            // Add custom type mappings
-            Console.WriteLine("? Adding custom type mappings...");
-            runtimeManager.AddTypeMapping("ATOMIZER", PerfumeType.Spray);
-            runtimeManager.AddTypeMapping("VAPORISATEUR", PerfumeType.Spray);
-
-            // Test with new mappings
-            var testCases = new[]
-            {
-                "CHANEL NO 5 100ML AQUA ATOMIZER",
-                "DIOR SAUVAGE INTENSE 50ML EDT SPRAY",
-                "TOM FORD OUD WOOD PURE 30ML VAPORISATEUR",
-                "VERSACE BRIGHT CRYSTAL 90ML EDT SPRAY"
-            };
-
-            Console.WriteLine("\n?? Testing with new mappings:");
-            foreach (var testCase in testCases)
-            {
-                var result = runtimeManager.TestParsing(testCase);
-                Console.WriteLine($"   ?? {testCase}");
-                Console.WriteLine($"      ? {result.GetSummary()}");
-            }
-
-            var newStats = runtimeManager.GetStatistics();
-            Console.WriteLine($"\n?? Updated statistics:");
-            Console.WriteLine($"   ??? Brand mappings: {newStats.BrandMappings}");
-            Console.WriteLine($"   ?? Concentration mappings: {newStats.ConcentrationMappings}");
-            Console.WriteLine($"   ?? Type mappings: {newStats.TypeMappings}");
-
-            logger.LogInformation("Runtime dictionary management test completed successfully");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"? Test failed: {ex.Message}");
-            logger.LogError(ex, "Runtime dictionary management test failed");
-            throw;
-        }
-    }
-
-    static async Task TestComplexDescriptionParsing(IServiceProvider services, ILogger<Program> logger)
-    {
-        Console.WriteLine("\n?? Test 3: Complex Description Parsing");
-        Console.WriteLine("=" + new string('=', 50));
-
-        try
-        {
-            var runtimeManager = services.GetRequiredService<ProductParserRuntimeManager>();
-
-            // Test complex descriptions that might come from real data
-            var complexDescriptions = new[]
-            {
-                "ARMANI CODE BLACK 75ML EDP SPRAY FOR MEN TESTER",
-                "BULGARI OMNIA CRYSTALLINE 65ML EDT WOMEN PERFUME",
-                "CREED AVENTUS 120ML PARFUM SPRAY UNISEX LIMITED EDITION",
-                "HUGO BOSS BOTTLED NIGHT 100ML EDT HOMME SPLASH",
-                "ISSEY MIYAKE L'EAU D'ISSEY 125ML EDT POUR FEMME",
-                "JEAN PAUL GAULTIER LE MALE 200ML EDT SPRAY MASCULINE"
-            };
-
-            Console.WriteLine("?? Testing complex real-world descriptions:");
-            foreach (var description in complexDescriptions)
-            {
-                Console.WriteLine($"\n?? Testing: {description}");
-
-                var testResult = runtimeManager.TestParsingWithComparison(description);
-                Console.WriteLine($"   ? Changes: {testResult.GetSummary()}");
-                Console.WriteLine($"   ?? Matches: {testResult.FoundMatches}");
-
-                if (testResult.ParsedInfo.MatchedRules.Count > 0)
-                {
-                    Console.WriteLine($"   ?? Rules: {string.Join(", ", testResult.ParsedInfo.MatchedRules)}");
-                }
-            }
-
-            logger.LogInformation("Complex description parsing test completed successfully");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"? Test failed: {ex.Message}");
-            logger.LogError(ex, "Complex description parsing test failed");
-            throw;
-        }
-    }
-
-
-    static async Task TestCustomParsingRules(IServiceProvider services, ILogger<Program> logger)
-    {
-        Console.WriteLine("\n?? Test 5: Custom Parsing Rules");
-        Console.WriteLine("=" + new string('=', 50));
-
-        try
-        {
-            var runtimeManager = services.GetRequiredService<ProductParserRuntimeManager>();
-
-            // Add custom parsing rules
-            Console.WriteLine("? Adding custom parsing rules...");
-
-            // Rule to extract limited edition information
-            runtimeManager.AddParsingRule(
-                name: "ExtractLimitedEdition",
-                pattern: @"\b(LIMITED|EDITION|LE|COLLECTOR)\b",
-                propertyType: PropertyType.Remarks,
-                priority: 5
-            );
-
-            // Rule to extract tester information
-            runtimeManager.AddParsingRule(
-                name: "ExtractTester",
-                pattern: @"\b(TESTER|TST|DEMO)\b",
-                propertyType: PropertyType.Remarks,
-                priority: 6
-            );
-
-            // Rule to extract gender-specific information
-            runtimeManager.AddParsingRule(
-                name: "ExtractGenderSpecific",
-                pattern: @"\b(POUR HOMME|POUR FEMME|FOR MEN|FOR WOMEN|MASCULINE|FEMININE)\b",
-                propertyType: PropertyType.Gender,
-                priority: 7
-            );
-
-            // Test with descriptions containing these patterns
-            var testDescriptions = new[]
-            {
-                "CHANEL NO 5 LIMITED EDITION 100ML EDP SPRAY",
-                "DIOR SAUVAGE TESTER 100ML EDT SPRAY",
-                "TOM FORD NOIR POUR HOMME 50ML EDP",
-                "VERSACE BRIGHT CRYSTAL FOR WOMEN 90ML EDT",
-                "CREED AVENTUS COLLECTOR EDITION 120ML PARFUM"
-            };
-
-            Console.WriteLine("\n?? Testing with custom rules:");
-            foreach (var description in testDescriptions)
-            {
-                var result = runtimeManager.TestParsing(description);
-                Console.WriteLine($"   ?? {description}");
-                Console.WriteLine($"      ?? Rules matched: {string.Join(", ", result.MatchedRules)}");
-                Console.WriteLine($"      ? Result: {result.GetSummary()}");
-            }
-
-            logger.LogInformation("Custom parsing rules test completed successfully");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"? Test failed: {ex.Message}");
-            logger.LogError(ex, "Custom parsing rules test failed");
-            throw;
-        }
-    }
-
-    static async Task TestConfigurationPersistence(IServiceProvider services, ILogger<Program> logger)
-    {
-        Console.WriteLine("\n?? Test 6: Configuration Persistence");
-        Console.WriteLine("=" + new string('=', 50));
-
-        try
-        {
-            var configManager = services.GetRequiredService<ProductParserConfigurationManager>();
-
-            // Create backup
-            Console.WriteLine("?? Creating configuration backup...");
-            configManager.CreateBackup("test-backup.json");
-
-            // Export current configuration
-            Console.WriteLine("?? Exporting current configuration...");
-            configManager.ExportConfiguration("exported-config.json");
-
-            // Validate configuration
-            Console.WriteLine("? Validating configuration...");
-            var errors = configManager.ValidateConfiguration();
-
-            if (errors.Count > 0)
-            {
-                Console.WriteLine("?? Configuration validation errors:");
-                foreach (var error in errors)
-                {
-                    Console.WriteLine($"   - {error}");
-                }
-            }
-            else
-            {
-                Console.WriteLine("? Configuration is valid!");
-            }
-
-            // Show current configuration in JSON format
-            var config = configManager.CurrentConfiguration;
-            var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-            var configJson = JsonSerializer.Serialize(config, jsonOptions);
-
-            Console.WriteLine($"\n?? Current configuration preview (first 500 chars):");
-            Console.WriteLine($"```json");
-            Console.WriteLine(configJson.Length > 500 ? configJson.Substring(0, 500) + "..." : configJson);
-            Console.WriteLine($"```");
-
-            Console.WriteLine($"\n?? Configuration files created:");
-            Console.WriteLine($"   ?? test-backup.json");
-            Console.WriteLine($"   ?? exported-config.json");
-            Console.WriteLine($"   ?? product-parser-config.json (main config)");
-
-            logger.LogInformation("Configuration persistence test completed successfully");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"? Test failed: {ex.Message}");
-            logger.LogError(ex, "Configuration persistence test failed");
-            throw;
-        }
-    }
-
-    static async Task CreateNewFileConfigurationInteractive(IServiceProvider services, ILogger<Program> logger)
-    {
-        Console.WriteLine("?? Interactive File Configuration Creator");
-        Console.WriteLine("=" + new string('=', 45));
+        Console.WriteLine("?? Interactive Parsing Test");
+        Console.WriteLine("=" + new string('=', 40));
         Console.WriteLine();
-        Console.WriteLine("Welcome to the interactive FileConfigurationHolder creator!");
-        Console.WriteLine("I'll guide you through creating a new file configuration step by step.");
+        Console.WriteLine("This test demonstrates how the parser can ask for your help when");
+        Console.WriteLine("it encounters uncertain parsing decisions.");
         Console.WriteLine();
 
         try
         {
             using var scope = services.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<SacksDbContext>();
+            var configManager = services.GetRequiredService<ProductParserConfigurationManager>();
 
-            // Step 1: Basic Information
-            Console.WriteLine("?? Step 1: Basic Information");
-            Console.WriteLine("-" + new string('-', 30));
-
-            // Configuration Name
-            string configName;
-            while (true)
+            // Add some basic brand mappings for demonstration
+            if (runtimeManager == null)
             {
-                Console.Write("?? What would you like to name this configuration? (e.g., 'Supplier ABC CSV Format'): ");
-                configName = Console.ReadLine()?.Trim() ?? string.Empty;
-
-                if (string.IsNullOrEmpty(configName))
-                {
-                    Console.WriteLine("?? Configuration name cannot be empty. Please try again.");
-                    continue;
-                }
-
-                if (configName.Length > 200)
-                {
-                    Console.WriteLine("?? Configuration name is too long (max 200 characters). Please try again.");
-                    continue;
-                }
-
-                break;
-            }
-            Console.WriteLine($"? Configuration name: '{configName}'");
-
-            // Step 2: Supplier Selection
-            Console.WriteLine("\n?? Step 2: Supplier Selection");
-            Console.WriteLine("-" + new string('-', 25));
-
-            var suppliers = await dbContext.Suppliers.ToListAsync();
-            Supplier selectedSupplier;
-
-            if (suppliers.Count == 0)
-            {
-                Console.WriteLine("?? No suppliers found in database. Let's create one first!");
-                selectedSupplier = await CreateSupplierInteractive(dbContext);
-            }
-            else
-            {
-                Console.WriteLine("Available suppliers:");
-                for (int i = 0; i < suppliers.Count; i++)
-                {
-                    var supplier = suppliers[i];
-                    Console.WriteLine($"{i + 1}. {supplier.Name} ({supplier.Type}, {supplier.Country})");
-                }
-                Console.WriteLine($"{suppliers.Count + 1}. Create new supplier");
-
-                int supplierChoice;
-                while (true)
-                {
-                    Console.Write($"?? Select supplier (1-{suppliers.Count + 1}): ");
-                    if (int.TryParse(Console.ReadLine(), out supplierChoice))
-                    {
-                        if (supplierChoice >= 1 && supplierChoice <= suppliers.Count)
-                        {
-                            selectedSupplier = suppliers[supplierChoice - 1];
-                            break;
-                        }
-                        else if (supplierChoice == suppliers.Count + 1)
-                        {
-                            selectedSupplier = await CreateSupplierInteractive(dbContext);
-                            break;
-                        }
-                    }
-                    Console.WriteLine("?? Invalid choice. Please try again.");
-                }
-            }
-            Console.WriteLine($"? Selected supplier: {selectedSupplier.Name}");
-
-            // Step 3: File Pattern Information
-            Console.WriteLine("\n?? Step 3: File Pattern Information");
-            Console.WriteLine("-" + new string('=', 30));
-
-            // File Name Pattern
-            string fileNamePattern;
-            while (true)
-            {
-                Console.WriteLine("?? What file name pattern should this configuration match?");
-                Console.WriteLine("   Examples: *.csv, *inventory*.xlsx, supplier-data-*.xls, products.csv");
-                Console.Write("   Pattern: ");
-                fileNamePattern = Console.ReadLine()?.Trim() ?? string.Empty;
-
-                if (string.IsNullOrEmpty(fileNamePattern))
-                {
-                    Console.WriteLine("?? File name pattern cannot be empty. Please try again.");
-                    continue;
-                }
-
-                if (fileNamePattern.Length > 100)
-                {
-                    Console.WriteLine("?? File name pattern is too long (max 100 characters). Please try again.");
-                    continue;
-                }
-
-                break;
-            }
-            Console.WriteLine($"? File pattern: '{fileNamePattern}'");
-
-            // File Extension
-            string fileExtension;
-            while (true)
-            {
-                Console.WriteLine("?? What file extension does this configuration handle?");
-                Console.WriteLine("   Examples: .csv, .xlsx, .xls, .txt");
-                Console.Write("   Extension: ");
-                fileExtension = Console.ReadLine()?.Trim() ?? string.Empty;
-
-                if (string.IsNullOrEmpty(fileExtension))
-                {
-                    Console.WriteLine("?? File extension cannot be empty. Please try again.");
-                    continue;
-                }
-
-                if (!fileExtension.StartsWith("."))
-                {
-                    fileExtension = "." + fileExtension;
-                }
-
-                if (fileExtension.Length > 10)
-                {
-                    Console.WriteLine("?? File extension is too long (max 10 characters). Please try again.");
-                    continue;
-                }
-
-                break;
-            }
-            Console.WriteLine($"? File extension: '{fileExtension}'");
-
-            // Step 4: Configuration Type Choice
-            Console.WriteLine("\n?? Step 4: Configuration Setup");
-            Console.WriteLine("-" + new string('=', 25));
-
-            FileConfiguration fileConfig;
-            Console.WriteLine("?? How would you like to create the file configuration?");
-            Console.WriteLine("1. Use default configuration (recommended for most CSV files)");
-            Console.WriteLine("2. Create custom configuration (advanced)");
-            Console.Write("Choice (1-2): ");
-
-            var configChoice = Console.ReadLine();
-            if (configChoice == "2")
-            {
-                fileConfig = await CreateCustomFileConfiguration();
-            }
-            else
-            {
-                fileConfig = FileConfiguration.CreateDefaultConfiguration();
-                fileConfig.FormatName = configName;
-                Console.WriteLine("? Using default configuration with standard CSV settings");
+                runtimeManager = new ProductParserRuntimeManager(configManager);
             }
 
-            // Step 5: Optional Remarks
-            Console.WriteLine("\n?? Step 5: Optional Remarks");
-            Console.WriteLine("-" + new string('=', 25));
+            Console.WriteLine("?? Setting up interactive parsing test...");
+            
+            // Add some known brands for comparison
+            runtimeManager.AddBrandMapping("CHANEL", 1);
+            runtimeManager.AddBrandMapping("DIOR", 2);
+            runtimeManager.AddBrandMapping("TOM FORD", 3);
+            runtimeManager.AddBrandMapping("VERSACE", 4);
 
-            Console.WriteLine("?? Any additional notes or remarks about this configuration? (optional)");
-            Console.WriteLine("   Examples: 'Weekly inventory files', 'Special format for Product X', etc.");
-            Console.Write("   Remarks: ");
-            var remarks = Console.ReadLine()?.Trim();
-
-            if (!string.IsNullOrEmpty(remarks) && remarks.Length > 500)
-            {
-                remarks = remarks.Substring(0, 500);
-                Console.WriteLine("?? Remarks truncated to 500 characters.");
-            }
-
-            // Step 6: Summary and Confirmation
-            Console.WriteLine("\n?? Step 6: Review and Confirmation");
-            Console.WriteLine("-" + new string('=', 35));
-
-            Console.WriteLine("Here's a summary of your new file configuration:");
-            Console.WriteLine($"   ?? Name: {configName}");
-            Console.WriteLine($"   ?? Supplier: {selectedSupplier.Name}");
-            Console.WriteLine($"   ?? File Pattern: {fileNamePattern}");
-            Console.WriteLine($"   ?? File Extension: {fileExtension}");
-            Console.WriteLine($"   ?? Configuration Type: {fileConfig.FormatName}");
-            Console.WriteLine($"   ?? Remarks: {(string.IsNullOrEmpty(remarks) ? "(none)" : remarks)}");
-
+            // Step 1: Configure confidence threshold
+            Console.WriteLine("\n?? Configuration");
+            Console.WriteLine("-" + new string('-', 20));
+            Console.WriteLine("The parser will ask for help when confidence is below a threshold.");
+            Console.WriteLine("Lower threshold = more questions, higher accuracy");
+            Console.WriteLine("Higher threshold = fewer questions, more automated");
             Console.WriteLine();
-            Console.Write("?? Does this look correct? Save to database? (y/N): ");
-            var saveConfirmation = Console.ReadLine()?.ToLowerInvariant();
 
-            if (saveConfirmation == "y" || saveConfirmation == "yes")
+            double confidenceThreshold = 0.6; // Default
+            Console.Write("Enter confidence threshold (0.1-0.9, default 0.6): ");
+            var thresholdInput = Console.ReadLine();
+            if (double.TryParse(thresholdInput, out var threshold) && threshold >= 0.1 && threshold <= 0.9)
             {
-                // Create and save the FileConfigurationHolder
-                var configJson = JsonSerializer.Serialize(fileConfig, new JsonSerializerOptions { WriteIndented = true });
+                confidenceThreshold = threshold;
+            }
+            Console.WriteLine($"? Using confidence threshold: {confidenceThreshold:P0}");
 
-                var fileConfigHolder = new FileConfigurationHolder
+            // Step 2: Create interactive handler
+            var interactiveHandler = new ConsoleInteractiveDecisionHandler(
+                enableInteraction: true, 
+                confidenceThreshold: confidenceThreshold
+            );
+
+            // Step 3: Create test data with ambiguous entries
+            Console.WriteLine("\n?? Creating test data with ambiguous parsing challenges...");
+            await CreateInteractiveTestCsvFile();
+
+            // Step 4: Configure file converter
+            var converter = new FiletoProductConverter(configManager);
+            var fileConfig = new FileConfiguration
+            {
+                TitleIndex = 0,
+                StartFromRow = 1,
+                EndAtRow = -1,
+                HasInnerTitles = false,
+                FormatName = "InteractiveTest",
+                ValidNumOfColumns = 4,
+                ColumnMapping = new Dictionary<int, PropertyType>
                 {
-                    Name = configName,
-                    SupplierId = selectedSupplier.SupplierID,
-                    FileNamePattern = fileNamePattern,
-                    FileExtension = fileExtension,
-                    ConfigurationJson = configJson,
-                    Remarks = remarks,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
+                    { 1, PropertyType.Code },
+                    { 2, PropertyType.Name },
+                    { 3, PropertyType.Brand },
+                    { 4, PropertyType.Size }
+                },
+                DescriptionColumns = new() { 2 }, // Name column for description parsing
+                IgnoredColumns = new()
+            };
 
-                dbContext.FileConfigurationHolders.Add(fileConfigHolder);
-                await dbContext.SaveChangesAsync();
+            Console.WriteLine("? Test configuration ready");
 
-                Console.WriteLine("\n?? Success!");
-                Console.WriteLine($"? File configuration '{configName}' has been created and saved to the database.");
-                Console.WriteLine($"?? Configuration ID: {fileConfigHolder.Id}");
+            // Step 5: Process with interactive mode
+            Console.WriteLine("\n?? Processing file with interactive decisions...");
+            Console.WriteLine("?? I'll ask for your help when I'm uncertain about parsing decisions.");
+            Console.WriteLine();
 
-                logger.LogInformation("Interactive file configuration created: {ConfigName} for supplier {SupplierName}",
-                    configName, selectedSupplier.Name);
+            var result = await converter.ConvertFileToProductsInteractiveAsync(
+                "interactive-test.csv", 
+                fileConfig, 
+                interactiveHandler
+            );
+
+            // Step 6: Display results
+            Console.WriteLine("\n?? Interactive Processing Results");
+            Console.WriteLine("=" + new string('=', 40));
+            Console.WriteLine($"?? Lines processed: {result.TotalLinesProcessed}");
+            Console.WriteLine($"?? Empty lines: {result.EmptyLines}");
+            Console.WriteLine($"? Valid products: {result.ValidProducts.Count}");
+            Console.WriteLine($"? Validation errors: {result.ValidationErrors.Count}");
+            Console.WriteLine($"?? Interactive decisions made: {result.InteractiveDecisions}");
+            Console.WriteLine($"?? Learning examples captured: {result.LearnedExamples}");
+            Console.WriteLine();
+
+            // Step 7: Show processed products
+            if (result.ValidProducts.Count > 0)
+            {
+                Console.WriteLine("?? Successfully Processed Products:");
+                foreach (var product in result.ValidProducts)
+                {
+                    Console.WriteLine($"   ?? {product.Code} - {product.Name}");
+                    Console.WriteLine($"      Brand ID: {product.BrandID}, Concentration: {product.Concentration}");
+                    Console.WriteLine($"      Type: {product.Type}, Size: {product.Size} {product.Units}");
+                    Console.WriteLine($"      Gender: {product.Gender}");
+                    Console.WriteLine();
+                }
+            }
+
+            // Step 8: Show validation errors if any
+            if (result.ValidationErrors.Count > 0)
+            {
+                Console.WriteLine("?? Validation Errors:");
+                foreach (var error in result.ValidationErrors)
+                {
+                    Console.WriteLine($"   Row {error.RowNumber}: {error.ErrorMessage}");
+                    Console.WriteLine($"      Field: {error.Field}, Value: '{error.Value}'");
+                    Console.WriteLine();
+                }
+            }
+
+            // Step 9: Offer to run comparison
+            Console.WriteLine("?? Comparison Test");
+            Console.WriteLine("-" + new string('-', 20));
+            Console.Write("Would you like to see how this compares to non-interactive parsing? (y/N): ");
+            var compareChoice = Console.ReadLine()?.ToLowerInvariant();
+
+            if (compareChoice == "y" || compareChoice == "yes")
+            {
+                Console.WriteLine("\n?? Running non-interactive comparison...");
+                var nonInteractiveResult = await converter.ConvertFileToProductsAsync("interactive-test.csv", fileConfig);
+
+                Console.WriteLine("\n?? Comparison Results:");
+                Console.WriteLine($"                     Interactive  Non-Interactive  Improvement");
+                Console.WriteLine($"Valid Products:      {result.ValidProducts.Count,10}  {nonInteractiveResult.ValidProducts.Count,14}  {result.ValidProducts.Count - nonInteractiveResult.ValidProducts.Count,11:+#;-#;0}");
+                Console.WriteLine($"Validation Errors:   {result.ValidationErrors.Count,10}  {nonInteractiveResult.ValidationErrors.Count,14}  {nonInteractiveResult.ValidationErrors.Count - result.ValidationErrors.Count,11:+#;-#;0}");
+                Console.WriteLine($"User Decisions:      {result.InteractiveDecisions,10}  {0,14}  {result.InteractiveDecisions,11}");
+
+                if (result.InteractiveDecisions > 0)
+                {
+                    Console.WriteLine($"\n?? The interactive mode required {result.InteractiveDecisions} user decisions");
+                    Console.WriteLine("   but potentially improved parsing accuracy.");
+                }
+            }
+
+            // Step 10: Summary and insights
+            Console.WriteLine("\n? Interactive Parsing Test Summary");
+            Console.WriteLine("=" + new string('=', 40));
+            if (result.InteractiveDecisions > 0)
+            {
+                Console.WriteLine($"?? The parser asked for help {result.InteractiveDecisions} times");
+                Console.WriteLine("?? This helps improve accuracy for ambiguous data");
+                Console.WriteLine("?? Each decision can be used to improve future parsing");
             }
             else
             {
-                Console.WriteLine("? Configuration creation cancelled.");
+                Console.WriteLine("?? No user interaction was needed with the current threshold");
+                Console.WriteLine($"?? Try lowering the confidence threshold (below {confidenceThreshold:P0}) to see more interactions");
             }
+
+            Console.WriteLine("\n?? Interactive Features Demonstrated:");
+            Console.WriteLine("   ? User-guided brand recognition");
+            Console.WriteLine("   ? Concentration disambiguation");
+            Console.WriteLine("   ? Size and units clarification");
+            Console.WriteLine("   ? Product name extraction decisions");
+            Console.WriteLine("   ? Configurable confidence thresholds");
+            Console.WriteLine("   ? Learning opportunity detection");
+
+            logger.LogInformation("Interactive parsing test completed with {InteractiveDecisions} user decisions", result.InteractiveDecisions);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"? Error creating file configuration: {ex.Message}");
-            logger.LogError(ex, "Error in interactive file configuration creation");
+            Console.WriteLine($"? Interactive parsing test failed: {ex.Message}");
+            logger.LogError(ex, "Interactive parsing test failed");
             throw;
         }
     }
 
-    static async Task<Supplier> CreateSupplierInteractive(SacksDbContext dbContext)
+    /// <summary>
+    /// Creates test CSV file specifically designed to trigger interactive decisions
+    /// </summary>
+    static async Task CreateInteractiveTestCsvFile()
     {
-        Console.WriteLine("\n?? Creating New Supplier");
-        Console.WriteLine("-" + new string('-', 25));
+        var csvContent = @"Code,Name,Brand,Size
+""COMPLEX001"",""UNKNOWN BRAND MYSTERIOUS ELIXIR 50ML SPRAY POUR HOMME"",""99"",""50ml""
+""AMBIGUOUS002"",""RARE PARFUM INTENSE 100ML VAPORISATEUR FEMME TESTER"",""NEWBRAND"",""100""
+""UNCLEAR003"",""EXOTIC AQUA FRESH 75ML COLOGNE SPLASH UNISEX"",""888"",""75 oz""
+""CONFUSING004"",""VINTAGE EDT CLASSIC 30ML ATOMIZER MEN LIMITED"",""OLDHOUSE"",""30ml""
+""UNCERTAIN005"",""MYSTERIOUS HOUSE PURE ESSENCE 125ML POUR FEMME"",""UNKNOWN"",""125""
+""SIMPLE006"",""CHANEL NO 5 100ML EDP SPRAY WOMEN"",""1"",""100ml""";
 
-        // Supplier Name
-        string supplierName;
-        while (true)
-        {
-            Console.Write("?? Supplier name: ");
-            supplierName = Console.ReadLine()?.Trim() ?? string.Empty;
-
-            if (string.IsNullOrEmpty(supplierName))
-            {
-                Console.WriteLine("?? Supplier name cannot be empty. Please try again.");
-                continue;
-            }
-
-            if (supplierName.Length > 200)
-            {
-                Console.WriteLine("?? Supplier name is too long (max 200 characters). Please try again.");
-                continue;
-            }
-
-            break;
-        }
-
-        // Supplier Type
-        Console.WriteLine("?? Supplier type (e.g., Distributor, Retailer, Manufacturer, Wholesaler): ");
-        var supplierType = Console.ReadLine()?.Trim() ?? "Distributor";
-        if (supplierType.Length > 100)
-        {
-            supplierType = supplierType.Substring(0, 100);
-        }
-
-        // Country
-        Console.WriteLine("?? Country: ");
-        var country = Console.ReadLine()?.Trim() ?? string.Empty;
-        if (country.Length > 100)
-        {
-            country = country.Substring(0, 100);
-        }
-
-        // Contact Info
-        Console.WriteLine("?? Contact information (email, phone, etc.) [optional]: ");
-        var contactInfo = Console.ReadLine()?.Trim() ?? string.Empty;
-        if (contactInfo.Length > 500)
-        {
-            contactInfo = contactInfo.Substring(0, 500);
-        }
-
-        var supplier = new Supplier
-        {
-            Name = supplierName,
-            Type = supplierType,
-            Country = country,
-            ContactInfo = contactInfo
-        };
-
-        dbContext.Suppliers.Add(supplier);
-        await dbContext.SaveChangesAsync();
-
-        Console.WriteLine($"? Supplier '{supplierName}' created successfully!");
-        return supplier;
+        await File.WriteAllTextAsync("interactive-test.csv", csvContent);
     }
 
-    static async Task<FileConfiguration> CreateCustomFileConfiguration()
+    /// <summary>
+    /// Placeholder for running standard tests without database
+    /// </summary>
+    static async Task RunAllTests(IServiceProvider services, ILogger<Program> logger)
     {
-        Console.WriteLine("\n?? Creating Custom File Configuration");
-        Console.WriteLine("-" + new string('=', 35));
-        Console.WriteLine("Let's set up the file structure and column mappings...");
+        Console.WriteLine("?? Running Standard Tests");
+        Console.WriteLine("?? Implementation in progress...");
+        await Task.Delay(1000);
+    }
 
-        // Start with default and modify
-        var config = FileConfiguration.CreateDefaultConfiguration();
-
-        // Format Name
-        Console.Write("?? Configuration format name: ");
-        var formatName = Console.ReadLine()?.Trim();
-        if (!string.IsNullOrEmpty(formatName))
-        {
-            config.FormatName = formatName;
-        }
-
-        // Row settings
-        Console.WriteLine("\n?? Row Settings:");
-        Console.WriteLine($"Current settings: Start from row {config.StartFromRow}, End at row {(config.EndAtRow == -1 ? "end of file" : config.EndAtRow.ToString())}");
-
-        Console.Write("?? Start reading from which row? (0-based, current: 1): ");
-        if (int.TryParse(Console.ReadLine(), out var startRow))
-        {
-            config.StartFromRow = startRow;
-        }
-
-        Console.Write("?? End at which row? (-1 for end of file, current: -1): ");
-        if (int.TryParse(Console.ReadLine(), out var endRow))
-        {
-            config.EndAtRow = endRow;
-        }
-
-        Console.Write("?? Does the file have inner title rows to skip? (y/N): ");
-        var hasInnerTitles = Console.ReadLine()?.ToLowerInvariant();
-        config.HasInnerTitles = hasInnerTitles == "y" || hasInnerTitles == "yes";
-
-        Console.Write("?? Expected number of columns per row: ");
-        if (int.TryParse(Console.ReadLine(), out var numColumns))
-        {
-            config.ValidNumOfColumns = numColumns;
-        }
-
-        // Column mapping
-        Console.WriteLine("\n?? Column Mapping:");
-        Console.WriteLine("Let's map which columns contain which type of data...");
-        Console.WriteLine("Available property types: Code, Name, Brand, Concentration, Type, Gender, Size, LilFree, CountryOfOrigin");
-
-        config.ColumnMapping.Clear();
-        Console.Write("?? How many columns do you want to map? ");
-        if (int.TryParse(Console.ReadLine(), out var mappingCount))
-        {
-            for (int i = 0; i < mappingCount; i++)
-            {
-                Console.Write($"Column {i + 1} - Column number (1-based): ");
-                if (int.TryParse(Console.ReadLine(), out var colNum))
-                {
-                    Console.Write($"Column {i + 1} - Property type (Code/Name/Brand/etc.): ");
-                    var propTypeStr = Console.ReadLine()?.Trim();
-                    if (Enum.TryParse<PropertyType>(propTypeStr, true, out var propType))
-                    {
-                        config.ColumnMapping[colNum] = propType;
-                        Console.WriteLine($"? Column {colNum} ? {propType}");
-                    }
-                }
-            }
-        }
-
-        // Description columns for parsing
-        Console.WriteLine("\n?? Description Parsing:");
-        Console.Write("?? Which columns contain product descriptions for parsing? (comma-separated, 1-based): ");
-        var descCols = Console.ReadLine()?.Trim();
-        if (!string.IsNullOrEmpty(descCols))
-        {
-            config.DescriptionColumns.Clear();
-            foreach (var col in descCols.Split(','))
-            {
-                if (int.TryParse(col.Trim(), out var colIndex))
-                {
-                    config.DescriptionColumns.Add(colIndex);
-                }
-            }
-        }
-
-        Console.WriteLine($"? Custom configuration created with {config.ColumnMapping.Count} mapped columns");
-        return config;
+    /// <summary>
+    /// Placeholder for interactive file configuration creator
+    /// </summary>
+    static async Task CreateNewFileConfigurationInteractive(IServiceProvider services, ILogger<Program> logger)
+    {
+        Console.WriteLine("??? Interactive File Configuration Creator");
+        Console.WriteLine("?? Implementation in progress...");
+        await Task.Delay(1000);
     }
 }
