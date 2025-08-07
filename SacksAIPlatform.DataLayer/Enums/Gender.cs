@@ -2,7 +2,9 @@ namespace SacksAIPlatform.DataLayer.Enums;
 
 public enum Gender
 {
-    Unisex = 0,
-    Male = 1,
-    Female = 2
+    Unknown = -1, // Unknown concentration
+    None = 0,    // No Country specified
+    Unisex = 1,
+    Male = 2,
+    Female = 3
 }

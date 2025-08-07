@@ -345,13 +345,6 @@ the parser and the dictionary should be configurable on runTime, meaning, the us
             if (string.IsNullOrWhiteSpace(fieldValue))
                 return;
 
-            // Try direct parsing as ID first
-            if (int.TryParse(fieldValue, out var brandId))
-            {
-                product.BrandID = brandId;
-                return;
-            }
-
             // Use the parser to look up brand by name
             var parsed = _parser.ParseDescription(fieldValue);
             if (parsed.BrandId.HasValue)

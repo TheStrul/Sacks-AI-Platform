@@ -82,25 +82,25 @@ class Program
                 services.AddSingleton<ProductParserConfigurationManager>();
                 services.AddSingleton<ProductParserRuntimeManager>();
                 services.AddTransient<FiletoProductConverter>();
-                
+
                 // Configure logging based on appsettings.json
                 var redirectToDebug = context.Configuration.GetValue<bool>("Logging:RedirectToDebug", true);
                 var enableConsoleLogging = context.Configuration.GetValue<bool>("Logging:EnableConsoleLogging", false);
-                
+
                 services.AddLogging(logging =>
                 {
                     logging.ClearProviders();
-                    
+
                     if (redirectToDebug)
                     {
                         logging.AddDebug();
                     }
-                    
+
                     if (enableConsoleLogging)
                     {
                         logging.AddConsole();
                     }
-                    
+
                     logging.SetMinimumLevel(LogLevel.Information);
                 });
             });
@@ -166,6 +166,7 @@ class Program
         }
     }
 
+    static ProductParserRuntimeManager runtimeManager = null;
     /// <summary>
     /// Main database integration test - connects to real DB and allows file parsing
     /// </summary>
@@ -223,7 +224,11 @@ class Program
 
             // Step 2: Update parser with database brand mappings
             Console.WriteLine("\n?? Configuring parser with database brand mappings...");
-            var runtimeManager = new ProductParserRuntimeManager(configManager);
+            if (runtimeManager == null)
+            {
+                runtimeManager = new ProductParserRuntimeManager(configManager);
+            }
+                
 
             foreach (var brand in brands)
             {
@@ -346,8 +351,7 @@ class Program
         Console.WriteLine("Please select a file to process:");
         Console.WriteLine("1. Browse for file");
         Console.WriteLine("2. Use test file (test-data.csv)");
-        Console.WriteLine("3. Enter file path manually");
-        Console.Write("Choice (1-3): ");
+        Console.Write("Choice (1-2): ");
 
         var choice = Console.ReadLine();
         switch (choice)
@@ -364,10 +368,6 @@ class Program
                     await CreateTestCsvFile();
                 }
                 return "test-data.csv";
-
-            case "3":
-                Console.Write("Enter file path: ");
-                return Console.ReadLine();
 
             default:
                 Console.WriteLine("? Invalid choice.");
